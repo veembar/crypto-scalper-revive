@@ -19,6 +19,12 @@ export default {
 			}
 		},
 		extend: {
+			opacity: {
+				'10': '0.1',
+			},
+			fillOpacity: {
+				'10': '0.1',
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

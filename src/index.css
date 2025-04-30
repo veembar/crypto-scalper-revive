@@ -99,8 +99,9 @@
     @apply stroke-chart-grid stroke-opacity-50;
   }
   
+  /* Use inline style instead of Tailwind class */
   .recharts-tooltip-cursor {
-    @apply fill-opacity-10;
+    fill-opacity: 0.1;
   }
 
   /* Custom scrollbar */

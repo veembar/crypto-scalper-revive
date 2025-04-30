@@ -10,8 +10,16 @@ import {
   YAxis,
   CartesianGrid,
   ReferenceLine,
+  BarChart,
+  Bar,
+  CandlestickChart,
+  Candlestick,
+  Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChartLine, BarChart as BarChartIcon, ChartCandlestick } from "lucide-react";
 
 interface CryptoChartProps {
   data: any[];
@@ -21,6 +29,8 @@ interface CryptoChartProps {
 
 const CryptoChart = ({ data, title, isLoading = false }: CryptoChartProps) => {
   const [priceChange, setPriceChange] = useState<{value: number, percent: string}>({value: 0, percent: "0%"});
+  const [chartType, setChartType] = useState<"area" | "bar" | "candle">("area");
+  const [timeframe, setTimeframe] = useState<string>("5min");
   
   // Calculate price change when data updates
   useEffect(() => {
@@ -53,12 +63,24 @@ const CryptoChart = ({ data, title, isLoading = false }: CryptoChartProps) => {
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="bg-dark-card p-3 border border-dark-border rounded-md shadow-lg">
-          <p className="text-xs text-muted-foreground">{label}</p>
+      const displayData = chartType === "candle" ? 
+        (
+          <>
+            <p className="text-xs text-muted-foreground">Open: ${Number(payload[0].payload.open).toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">Close: ${Number(payload[0].payload.close).toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">High: ${Number(payload[0].payload.high).toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">Low: ${Number(payload[0].payload.low).toLocaleString()}</p>
+          </>
+        ) : (
           <p className="text-sm font-medium text-white">
             ${Number(payload[0].value).toLocaleString()}
           </p>
+        );
+        
+      return (
+        <div className="bg-dark-card p-3 border border-dark-border rounded-md shadow-lg">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          {displayData}
           <p className="text-xs text-muted-foreground">
             {new Date(payload[0].payload.date).toLocaleString()}
           </p>
@@ -79,10 +101,43 @@ const CryptoChart = ({ data, title, isLoading = false }: CryptoChartProps) => {
   const gradientStart = isPositive ? "rgba(72, 187, 120, 0.15)" : "rgba(245, 101, 101, 0.15)";
   const gradientEnd = "rgba(0, 0, 0, 0)";
 
+  // Transform data for candlestick chart
+  const transformToCandleData = (data) => {
+    // In a real app, this would use actual OHLC data
+    // For now, we'll simulate it based on price
+    return data.map((d, index) => {
+      const basePrice = d.price;
+      const volatility = basePrice * 0.01; // 1% volatility range
+      
+      // Simulate open, high, low prices based on the current price
+      const open = index > 0 ? data[index - 1].price : basePrice * (1 - Math.random() * 0.005);
+      const close = basePrice;
+      const high = Math.max(open, close) + (Math.random() * volatility);
+      const low = Math.min(open, close) - (Math.random() * volatility);
+      
+      return {
+        ...d,
+        open,
+        high,
+        close,
+        low
+      };
+    });
+  };
+
+  // Prepare candlestick data
+  const candleData = transformToCandleData(data);
+
+  // Volume data (simplified for this example)
+  const volumeData = data.map(d => ({
+    ...d,
+    volume: d.price * (0.5 + Math.random())
+  }));
+
   return (
     <Card className="bg-dark-card border-dark-border">
       <CardHeader className="pb-0">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <CardTitle className="text-lg font-medium flex items-center gap-2">
             {title}
             {isLoading && (
@@ -91,17 +146,59 @@ const CryptoChart = ({ data, title, isLoading = false }: CryptoChartProps) => {
               </span>
             )}
           </CardTitle>
-          {data.length > 0 && (
-            <div className="flex items-center space-x-1">
-              <span className="text-sm">Current: ${data[data.length - 1].price.toLocaleString()}</span>
-              <span className={cn(
-                "text-xs px-2 py-0.5 rounded",
-                isPositive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
-              )}>
-                {priceChange.percent}
-              </span>
+          
+          <div className="flex items-center gap-2 flex-wrap">
+            <Tabs defaultValue={timeframe} onValueChange={setTimeframe} className="h-8">
+              <TabsList className="h-8 bg-dark-border/20">
+                <TabsTrigger value="1min" className="text-xs h-6 px-2">1m</TabsTrigger>
+                <TabsTrigger value="5min" className="text-xs h-6 px-2">5m</TabsTrigger>
+                <TabsTrigger value="15min" className="text-xs h-6 px-2">15m</TabsTrigger>
+                <TabsTrigger value="1h" className="text-xs h-6 px-2">1h</TabsTrigger>
+                <TabsTrigger value="1d" className="text-xs h-6 px-2">1d</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <div className="flex bg-dark-border/20 rounded-md p-0.5 gap-0.5">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("h-6 w-6 p-0", chartType === "area" ? "bg-primary/20" : "bg-transparent")} 
+                onClick={() => setChartType("area")}
+              >
+                <ChartLine className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("h-6 w-6 p-0", chartType === "bar" ? "bg-primary/20" : "bg-transparent")} 
+                onClick={() => setChartType("bar")}
+              >
+                <BarChartIcon className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("h-6 w-6 p-0", chartType === "candle" ? "bg-primary/20" : "bg-transparent")} 
+                onClick={() => setChartType("candle")}
+              >
+                <ChartCandlestick className="h-3 w-3" />
+              </Button>
             </div>
-          )}
+            
+            {data.length > 0 && (
+              <div className="flex items-center space-x-1">
+                <span className="text-sm">$
+                  {data[data.length - 1].price.toLocaleString()}
+                </span>
+                <span className={cn(
+                  "text-xs px-2 py-0.5 rounded",
+                  isPositive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                )}>
+                  {priceChange.percent}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-4">
@@ -112,67 +209,157 @@ const CryptoChart = ({ data, title, isLoading = false }: CryptoChartProps) => {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={data}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor={chartColor}
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor={chartColor}
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
-                <XAxis
-                  dataKey="time"
-                  tickFormatter={formatXAxis}
-                  tick={{ fontSize: 12, fill: "#CBD5E0" }}
-                  axisLine={false}
-                  tickLine={false}
-                  minTickGap={30}
-                />
-                <YAxis
-                  tickFormatter={formatYAxis}
-                  tick={{ fontSize: 12, fill: "#CBD5E0" }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={60}
-                  domain={[minPrice, maxPrice]}
-                  padding={{ top: 10, bottom: 10 }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                {data.length > 1 && (
-                  <ReferenceLine
-                    y={data[0].price}
-                    stroke="#718096"
-                    strokeDasharray="3 3"
+              {chartType === "area" && (
+                <AreaChart
+                  data={data}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor={chartColor}
+                        stopOpacity={0.3}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor={chartColor}
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
+                  <XAxis
+                    dataKey="time"
+                    tickFormatter={formatXAxis}
+                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                    axisLine={false}
+                    tickLine={false}
+                    minTickGap={30}
                   />
-                )}
-                <Area
-                  type="monotone"
-                  dataKey="price"
-                  stroke={chartColor}
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorPrice)"
-                  animationDuration={300}
-                  activeDot={{ r: 6, strokeWidth: 0, fill: chartColor }}
-                />
-              </AreaChart>
+                  <YAxis
+                    tickFormatter={formatYAxis}
+                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={60}
+                    domain={[minPrice, maxPrice]}
+                    padding={{ top: 10, bottom: 10 }}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  {data.length > 1 && (
+                    <ReferenceLine
+                      y={data[0].price}
+                      stroke="#718096"
+                      strokeDasharray="3 3"
+                    />
+                  )}
+                  <Area
+                    type="monotone"
+                    dataKey="price"
+                    stroke={chartColor}
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorPrice)"
+                    animationDuration={300}
+                    activeDot={{ r: 6, strokeWidth: 0, fill: chartColor }}
+                  />
+                </AreaChart>
+              )}
+              
+              {chartType === "bar" && (
+                <BarChart
+                  data={volumeData}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
+                  <XAxis
+                    dataKey="time"
+                    tickFormatter={formatXAxis}
+                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                    axisLine={false}
+                    tickLine={false}
+                    minTickGap={30}
+                  />
+                  <YAxis
+                    tickFormatter={formatYAxis}
+                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={60}
+                    domain={[minPrice, maxPrice]}
+                    padding={{ top: 10, bottom: 10 }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 10, fill: "#718096" }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={60}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend verticalAlign="top" height={36} />
+                  <Bar
+                    name="Price"
+                    dataKey="price"
+                    fill={chartColor}
+                    radius={[2, 2, 0, 0]}
+                  />
+                  <Bar
+                    name="Volume"
+                    dataKey="volume"
+                    fill="#718096"
+                    radius={[2, 2, 0, 0]}
+                    yAxisId="right"
+                    opacity={0.5}
+                  />
+                </BarChart>
+              )}
+              
+              {chartType === "candle" && (
+                <CandlestickChart
+                  data={candleData}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
+                  <XAxis
+                    dataKey="time"
+                    tickFormatter={formatXAxis}
+                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                    axisLine={false}
+                    tickLine={false}
+                    minTickGap={30}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                    axisLine={false}
+                    tickLine={false}
+                    domain={['auto', 'auto']}
+                    padding={{ top: 10, bottom: 10 }}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Candlestick
+                    name="Price"
+                    dataKey="price"
+                    x="time"
+                    yAccessor={(d) => [d.open, d.high, d.low, d.close]}
+                    openAccessor={(d) => d.open}
+                    closeAccessor={(d) => d.close}
+                    highAccessor={(d) => d.high}
+                    lowAccessor={(d) => d.low}
+                    fill="#FFFFFF"
+                    stroke="#FFFFFF"
+                    wickStroke="#718096"
+                  />
+                </CandlestickChart>
+              )}
             </ResponsiveContainer>
           )}
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mt-2">
-          <span>Last 30 data points</span>
-          <span>Real-time BTC/USD Price</span>
+          <span>{timeframe} timeframe</span>
+          <span>{chartType === "area" ? "Line Chart" : chartType === "bar" ? "Bar Chart" : "Candlestick Chart"}</span>
         </div>
       </CardContent>
     </Card>

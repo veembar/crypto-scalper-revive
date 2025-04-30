@@ -3,202 +3,111 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Search, Filter, Download, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SystemLogsProps {
   logs: string[];
 }
 
 const SystemLogs = ({ logs }: SystemLogsProps) => {
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const [filter, setFilter] = useState<string>("");
-  const [autoScroll, setAutoScroll] = useState<boolean>(true);
-  const logsContainerRef = useRef<HTMLDivElement>(null);
+  const [filter, setFilter] = useState("all");
+  const [autoscroll, setAutoscroll] = useState(true);
+  const logsEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   
-  // Parse log type from log string
-  const getLogType = (log: string): string => {
-    if (log.includes("INFO")) return "info";
-    if (log.includes("ERROR")) return "error";
-    if (log.includes("WARNING")) return "warning";
-    if (log.includes("SUCCESS")) return "success";
-    if (log.includes("TRADE")) return "trade";
-    if (log.includes("STRATEGY")) return "strategy";
-    if (log.includes("API")) return "api";
-    if (log.includes("SYSTEM")) return "system";
-    return "info";
-  };
-  
-  // Filter logs based on active tab and search filter
+  // Filter logs based on the selected filter
   const filteredLogs = logs.filter(log => {
-    // Filter by tab
-    if (activeTab !== "all") {
-      const logType = getLogType(log).toUpperCase();
-      if (activeTab === "trade" && !log.includes("TRADE")) return false;
-      if (activeTab === "system" && !log.includes("SYSTEM")) return false;
-      if (activeTab === "api" && !log.includes("API")) return false;
-      if (activeTab === "strategy" && !log.includes("STRATEGY")) return false;
-    }
-    
-    // Filter by search term
-    if (filter && !log.toLowerCase().includes(filter.toLowerCase())) {
-      return false;
-    }
-    
+    if (filter === "all") return true;
+    if (filter === "info") return log.includes("INFO") || log.includes("API");
+    if (filter === "trades") return log.includes("TRADE");
+    if (filter === "signals") return log.includes("STRATEGY");
+    if (filter === "errors") return log.includes("ERROR");
     return true;
   });
   
-  // Autoscroll to the newest log entry
-  useEffect(() => {
-    if (autoScroll && logsContainerRef.current && logs.length > 0) {
-      const scrollContainer = logsContainerRef.current;
-      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+  // Function to colorize log messages
+  const colorizeLog = (log: string) => {
+    if (log.includes("INFO")) {
+      return <span className="text-blue-400">{log}</span>;
+    } else if (log.includes("ERROR")) {
+      return <span className="text-red-400">{log}</span>;
+    } else if (log.includes("WARNING")) {
+      return <span className="text-yellow-400">{log}</span>;
+    } else if (log.includes("TRADE")) {
+      return <span className="text-green-400">{log}</span>;
+    } else if (log.includes("STRATEGY")) {
+      return <span className="text-purple-400">{log}</span>;
+    } else if (log.includes("API")) {
+      return <span className="text-cyan-400">{log}</span>;
+    } else if (log.includes("CONFIG")) {
+      return <span className="text-yellow-400">{log}</span>;
+    } else {
+      return log;
     }
-  }, [logs, filteredLogs, autoScroll]);
-  
-  // Get CSS class for log type
-  const getLogClass = (log: string): string => {
-    if (log.includes("SUCCESS") || log.includes("strategy") && log.toLowerCase().includes("buy signal")) return "text-green-400";
-    if (log.includes("ERROR")) return "text-red-400";
-    if (log.includes("WARNING")) return "text-yellow-400";
-    if (log.includes("STRATEGY") && log.toLowerCase().includes("sell signal")) return "text-red-400";
-    if (log.includes("STRATEGY")) return "text-blue-400";
-    if (log.includes("TRADE")) return "text-purple-400";
-    if (log.includes("API")) return "text-cyan-400";
-    if (log.includes("SYSTEM")) return "text-amber-400";
-    return "text-gray-300";
   };
   
-  // Extract log components for highlighting
-  const formatLog = (log: string) => {
-    const timestampMatch = log.match(/\[\d{2}:\d{2}:\d{2} [AP]M\]/);
-    const typeMatch = log.match(/\s+(INFO|ERROR|WARNING|SUCCESS|TRADE|STRATEGY|API|SYSTEM)\s+/);
-    
-    if (!timestampMatch) return <span>{log}</span>;
-    
-    const timestamp = timestampMatch[0];
-    const afterTimestamp = log.substring(timestamp.length);
-    
-    if (!typeMatch) {
-      return (
-        <>
-          <span className="text-gray-500">{timestamp}</span>
-          <span>{afterTimestamp}</span>
-        </>
-      );
+  // Auto-scroll to bottom when new logs are added
+  useEffect(() => {
+    if (autoscroll && logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-    
-    const type = typeMatch[0];
-    const beforeType = afterTimestamp.substring(0, afterTimestamp.indexOf(type));
-    const afterType = afterTimestamp.substring(afterTimestamp.indexOf(type) + type.length);
-    
-    let typeClass = "text-blue-400";
-    if (type.includes("ERROR")) typeClass = "text-red-400";
-    if (type.includes("WARNING")) typeClass = "text-yellow-400";
-    if (type.includes("SUCCESS")) typeClass = "text-green-400";
-    
-    return (
-      <>
-        <span className="text-gray-500">{timestamp}</span>
-        <span className={typeClass}>{type}</span>
-        <span>{afterType}</span>
-      </>
-    );
+  }, [logs, autoscroll]);
+  
+  const clearConsole = () => {
+    // In a real app, this would clear the logs array
+    console.log(`[${new Date().toLocaleTimeString()}] INFO    Cleared system logs`);
   };
 
   return (
     <Card className="bg-dark-card border-dark-border">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-medium flex items-center gap-2">
-          System Logs
-          <span className="text-xs rounded px-2 py-0.5 bg-dark-border text-gray-400">
-            {filteredLogs.length} entries
-          </span>
-        </CardTitle>
-        
+        <CardTitle className="text-lg font-medium">System Logs</CardTitle>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Filter logs..."
-              className="h-9 w-[150px] sm:w-[200px] rounded-md border border-dark-border bg-dark-border/20 px-8 text-sm text-white placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
-            {filter && (
-              <X 
-                className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground cursor-pointer hover:text-white" 
-                onClick={() => setFilter("")}
-              />
-            )}
-          </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={cn(
-              "text-xs",
-              autoScroll ? "text-green-400" : "text-muted-foreground"
-            )}
-            onClick={() => setAutoScroll(!autoScroll)}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 border-dark-border"
+            onClick={() => setAutoscroll(!autoscroll)}
           >
-            Auto-scroll {autoScroll ? "On" : "Off"}
+            {autoscroll ? "Disable Autoscroll" : "Enable Autoscroll"}
           </Button>
-          
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
-            <Filter className="h-4 w-4" />
-          </Button>
-          
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
-            <Download className="h-4 w-4" />
-          </Button>
-          
-          <Button 
+          <Button
             variant="outline" 
-            size="sm" 
-            className="text-xs border-dark-border hover:border-red-400 hover:text-red-400 hover:bg-transparent"
-            onClick={() => console.log(`[${new Date().toLocaleTimeString()}] SYSTEM  Log console cleared`)}
+            size="sm"
+            className="h-7 border-dark-border"
+            onClick={clearConsole}
           >
             Clear
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="all" onValueChange={setActiveTab}>
-          <TabsList className="bg-dark-border/20 mb-4">
+        <Tabs defaultValue="all" onValueChange={setFilter}>
+          <TabsList className="bg-dark-border/20 mb-2">
             <TabsTrigger value="all">All Logs</TabsTrigger>
-            <TabsTrigger value="trade">Trade Logs</TabsTrigger>
-            <TabsTrigger value="system">System Logs</TabsTrigger>
-            <TabsTrigger value="api">API Logs</TabsTrigger>
-            <TabsTrigger value="strategy">Strategy Logs</TabsTrigger>
+            <TabsTrigger value="info">Info</TabsTrigger>
+            <TabsTrigger value="trades">Trades</TabsTrigger>
+            <TabsTrigger value="signals">Signals</TabsTrigger>
+            <TabsTrigger value="errors">Errors</TabsTrigger>
           </TabsList>
           
-          <TabsContent value={activeTab} className="mt-0">
-            <div 
-              ref={logsContainerRef}
-              className="h-[300px] overflow-y-auto border border-dark-border rounded-md bg-black/30 font-mono text-sm p-1"
-            >
-              {filteredLogs.length > 0 ? (
-                filteredLogs.map((log, index) => (
-                  <div 
-                    key={index} 
-                    className={cn(
-                      "py-1 px-2 border-b border-dark-border/50 whitespace-pre-wrap",
-                      getLogClass(log)
-                    )}
-                  >
-                    {formatLog(log)}
+          <TabsContent value={filter}>
+            <ScrollArea ref={scrollAreaRef} className="h-[300px] bg-dark-border/10 rounded-md p-2 text-xs font-mono">
+              <div className="space-y-1">
+                {filteredLogs.map((log, index) => (
+                  <div key={index} className="whitespace-nowrap">
+                    {colorizeLog(log)}
                   </div>
-                ))
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No logs available
-                </div>
-              )}
-            </div>
+                ))}
+                <div ref={logsEndRef} />
+              </div>
+            </ScrollArea>
           </TabsContent>
         </Tabs>
+        <div className="flex justify-between text-xs text-muted-foreground mt-2">
+          <span>{filteredLogs.length} log entries</span>
+          <span>System activity and trading events</span>
+        </div>
       </CardContent>
     </Card>
   );

@@ -28,7 +28,7 @@ const TradeHistory = ({ trades }: TradeHistoryProps) => {
               <div key={trade.id} className="grid grid-cols-5 gap-4 py-3 border-b border-dark-border">
                 <span className={cn(
                   "text-sm",
-                  trade.type === "BUY" ? "text-profit" : "text-loss"
+                  trade.type === "BUY" ? "text-green-400" : "text-red-400"
                 )}>
                   {trade.type}
                 </span>
@@ -39,7 +39,7 @@ const TradeHistory = ({ trades }: TradeHistoryProps) => {
                 </span>
                 <span className={cn(
                   "text-sm font-medium text-right",
-                  (trade.profit || 0) >= 0 ? "text-profit" : "text-loss"
+                  (trade.profit || 0) >= 0 ? "text-green-400" : "text-red-400"
                 )}>
                   {trade.profit !== undefined ? (
                     <>

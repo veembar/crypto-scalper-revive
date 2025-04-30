@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Check, Key, Lock, AlertCircle } from "lucide-react";
+import { Check, Key, Lock, AlertCircle, Wallet, Bitcoin, DollarSign } from "lucide-react";
 import { tradingService } from "@/services/tradingService";
 
 const ApiKeySettings = () => {
@@ -19,6 +19,7 @@ const ApiKeySettings = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    console.log(`[${new Date().toLocaleTimeString()}] INFO    Validating API keys with exchange`);
     
     try {
       const isValid = await tradingService.setKrakenApiKeys(apiKey, apiSecret);
@@ -27,9 +28,11 @@ const ApiKeySettings = () => {
       if (isValid) {
         setApiKey('');
         setApiSecret('');
+        console.log(`[${new Date().toLocaleTimeString()}] SUCCESS API keys validated successfully`);
       }
     } catch (error) {
       console.error("Error setting API keys:", error);
+      console.log(`[${new Date().toLocaleTimeString()}] ERROR   API key validation failed: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -39,6 +42,7 @@ const ApiKeySettings = () => {
   const togglePaperTrading = (enabled: boolean) => {
     tradingService.updateSettings({ enablePaperTrading: enabled });
     setSettings(tradingService.getSettings());
+    console.log(`[${new Date().toLocaleTimeString()}] INFO    Paper trading ${enabled ? 'enabled' : 'disabled'}`);
   };
   
   // Toggle live trading
@@ -50,6 +54,7 @@ const ApiKeySettings = () => {
     
     tradingService.updateSettings({ enableLiveTrading: enabled });
     setSettings(tradingService.getSettings());
+    console.log(`[${new Date().toLocaleTimeString()}] INFO    Live trading ${enabled ? 'enabled' : 'disabled'}`);
   };
 
   return (
@@ -97,25 +102,50 @@ const ApiKeySettings = () => {
             </h3>
             
             {apiKeys.kraken && (
-              <div className="mb-4 p-3 rounded-md bg-dark-border/20">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <p className="text-sm truncate w-[200px] sm:w-full">
-                      API Key: {apiKeys.kraken.apiKey.substring(0, 4)}...{apiKeys.kraken.apiKey.substring(apiKeys.kraken.apiKey.length - 4)}
-                    </p>
-                  </div>
-                  <div className="ml-2">
-                    {apiKeys.kraken.isValid ? (
-                      <div className="bg-profit/20 text-profit px-2 py-1 rounded-md text-xs flex items-center">
-                        <Check className="w-3 h-3 mr-1" /> Valid
-                      </div>
-                    ) : (
-                      <div className="bg-loss/20 text-loss px-2 py-1 rounded-md text-xs flex items-center">
-                        <AlertCircle className="w-3 h-3 mr-1" /> Invalid
-                      </div>
-                    )}
+              <div className="mb-4">
+                <div className="p-3 rounded-md bg-dark-border/20 mb-3">
+                  <div className="flex items-center">
+                    <div className="flex-1">
+                      <p className="text-sm truncate w-[200px] sm:w-full">
+                        API Key: {apiKeys.kraken.apiKey.substring(0, 4)}...{apiKeys.kraken.apiKey.substring(apiKeys.kraken.apiKey.length - 4)}
+                      </p>
+                    </div>
+                    <div className="ml-2">
+                      {apiKeys.kraken.isValid ? (
+                        <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-md text-xs flex items-center">
+                          <Check className="w-3 h-3 mr-1" /> Valid
+                        </div>
+                      ) : (
+                        <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded-md text-xs flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" /> Invalid
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
+                
+                {apiKeys.kraken.isValid && apiKeys.kraken.balance && (
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="bg-blue-500/10 p-3 rounded-md border border-blue-500/20">
+                      <div className="flex items-center text-blue-400 text-xs font-medium mb-1">
+                        <Bitcoin className="w-3 h-3 mr-1" />
+                        BTC Balance
+                      </div>
+                      <div className="text-lg font-bold">
+                        {apiKeys.kraken.balance.BTC?.toFixed(8)}
+                      </div>
+                    </div>
+                    <div className="bg-green-500/10 p-3 rounded-md border border-green-500/20">
+                      <div className="flex items-center text-green-400 text-xs font-medium mb-1">
+                        <DollarSign className="w-3 h-3 mr-1" />
+                        USD Balance
+                      </div>
+                      <div className="text-lg font-bold">
+                        ${apiKeys.kraken.balance.USD?.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             

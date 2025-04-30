@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, BarChart, Activity, ArrowUpRight } from "lucide-react";
 import { tradingService, Position } from "@/services/tradingService";
 import { cn } from "@/lib/utils";
 
@@ -46,41 +46,53 @@ const PositionsManager = ({ currentPrice }: { currentPrice: number }) => {
   return (
     <Card className="bg-dark-card border-dark-border">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">Positions & Trades</CardTitle>
+        <CardTitle className="text-lg font-medium">Positions & Trading Stats</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Trading Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <div className="bg-dark-border/20 p-3 rounded-md">
-            <div className="text-sm text-muted-foreground">Profit Today</div>
+          <div className="bg-dark-border/20 p-3 rounded-md border border-dark-border">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">Paper Balance</div>
+              <Wallet className="h-4 w-4 text-blue-400" />
+            </div>
+            <div className="text-lg font-bold text-blue-400">
+              ${stats.paperBalance.toFixed(2)}
+            </div>
+          </div>
+          
+          <div className="bg-dark-border/20 p-3 rounded-md border border-dark-border">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">Profit Today</div>
+              <Activity className="h-4 w-4 text-green-400" />
+            </div>
             <div className={cn(
               "text-lg font-bold",
-              stats.profitToday >= 0 ? "text-profit" : "text-loss"
+              stats.profitToday >= 0 ? "text-green-400" : "text-red-400"
             )}>
               {stats.profitToday >= 0 ? "+" : ""}${stats.profitToday.toFixed(2)}
             </div>
           </div>
           
-          <div className="bg-dark-border/20 p-3 rounded-md">
-            <div className="text-sm text-muted-foreground">Total P/L</div>
-            <div className={cn(
-              "text-lg font-bold",
-              stats.totalProfit >= 0 ? "text-profit" : "text-loss"
-            )}>
-              {stats.totalProfit >= 0 ? "+" : ""}${stats.totalProfit.toFixed(2)}
+          <div className="bg-dark-border/20 p-3 rounded-md border border-dark-border">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">Win Rate</div>
+              <BarChart className="h-4 w-4 text-yellow-400" />
             </div>
-          </div>
-          
-          <div className="bg-dark-border/20 p-3 rounded-md">
-            <div className="text-sm text-muted-foreground">Win Rate</div>
-            <div className="text-lg font-bold">
+            <div className="text-lg font-bold text-yellow-400">
               {(stats.winRate * 100).toFixed()}%
+              <div className="text-xs text-muted-foreground">
+                {stats.todayWins}/{stats.todayWins + stats.todayLosses} today
+              </div>
             </div>
           </div>
           
-          <div className="bg-dark-border/20 p-3 rounded-md">
-            <div className="text-sm text-muted-foreground">Open Positions</div>
-            <div className="text-lg font-bold">
+          <div className="bg-dark-border/20 p-3 rounded-md border border-dark-border">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">Open Trades</div>
+              <ArrowUpRight className="h-4 w-4 text-purple-400" />
+            </div>
+            <div className="text-lg font-bold text-purple-400">
               {stats.openPositions} / {stats.totalTrades}
             </div>
           </div>
@@ -117,7 +129,7 @@ const PositionsManager = ({ currentPrice }: { currentPrice: number }) => {
                         <TableCell>
                           <div className={cn(
                             "flex items-center gap-1",
-                            position.type === "BUY" ? "text-profit" : "text-loss"
+                            position.type === "BUY" ? "text-green-400" : "text-red-400"
                           )}>
                             {position.type === "BUY" ? (
                               <TrendingUp className="w-4 h-4" />
@@ -132,7 +144,7 @@ const PositionsManager = ({ currentPrice }: { currentPrice: number }) => {
                         <TableCell className="text-xs">{position.strategyId}</TableCell>
                         <TableCell className={cn(
                           "text-right font-medium",
-                          (position.profit || 0) >= 0 ? "text-profit" : "text-loss"
+                          (position.profit || 0) >= 0 ? "text-green-400" : "text-red-400"
                         )}>
                           {position.profit !== undefined && position.profitPercent !== undefined ? (
                             <>
@@ -188,7 +200,7 @@ const PositionsManager = ({ currentPrice }: { currentPrice: number }) => {
                         <TableCell>
                           <div className={cn(
                             "flex items-center gap-1",
-                            position.type === "BUY" ? "text-profit" : "text-loss"
+                            position.type === "BUY" ? "text-green-400" : "text-red-400"
                           )}>
                             {position.type === "BUY" ? (
                               <TrendingUp className="w-4 h-4" />
@@ -210,7 +222,7 @@ const PositionsManager = ({ currentPrice }: { currentPrice: number }) => {
                         <TableCell className="text-xs">{position.strategyId}</TableCell>
                         <TableCell className={cn(
                           "text-right font-medium",
-                          (position.profit || 0) >= 0 ? "text-profit" : "text-loss"
+                          (position.profit || 0) >= 0 ? "text-green-400" : "text-red-400"
                         )}>
                           {position.profit !== undefined && position.profitPercent !== undefined ? (
                             <>

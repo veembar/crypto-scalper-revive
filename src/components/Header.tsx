@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Bitcoin, ChartLine, Play, Pause, Settings } from "lucide-react";
+import { Bitcoin, ChartLine, Play, Pause, Settings, Calendar } from "lucide-react";
 import { strategyService } from "@/services/strategyService";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,7 @@ const Header = () => {
           className={cn(
             "text-xs sm:text-sm border border-dark-border",
             isRunning 
-              ? "bg-primary/20 hover:bg-primary/30 text-primary" 
+              ? "bg-green-500/20 hover:bg-green-500/30 text-green-500 border-green-600" 
               : "hover:border-primary hover:bg-transparent"
           )}
           onClick={toggleSystem}
@@ -46,12 +46,16 @@ const Header = () => {
           )}
         </Button>
         
-        <Button variant="outline" className="text-xs sm:text-sm border-dark-border hover:border-primary hover:bg-transparent">
-          <ChartLine className="w-4 h-4 mr-2" /> Real-time Data
+        <Button variant="outline" className="text-xs sm:text-sm border-dark-border hover:border-blue-400 hover:text-blue-400 hover:bg-transparent">
+          <ChartLine className="w-4 h-4 mr-2 text-blue-400" /> Real-time Data
         </Button>
         
-        <Button variant="outline" className="text-xs sm:text-sm border-dark-border hover:border-primary hover:bg-transparent">
-          <Settings className="w-4 h-4 mr-2" /> Settings
+        <Button variant="outline" className="text-xs sm:text-sm border-dark-border hover:border-yellow-400 hover:text-yellow-400 hover:bg-transparent">
+          <Settings className="w-4 h-4 mr-2 text-yellow-400" /> Settings
+        </Button>
+        
+        <Button variant="outline" className="hidden sm:flex text-xs sm:text-sm border-dark-border hover:border-purple-400 hover:text-purple-400 hover:bg-transparent">
+          <Calendar className="w-4 h-4 mr-2 text-purple-400" /> {new Date().toLocaleDateString()}
         </Button>
       </div>
     </header>

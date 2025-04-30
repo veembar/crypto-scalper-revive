@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
 import PriceCard from "@/components/PriceCard";
 import CryptoChart from "@/components/CryptoChart";
@@ -9,6 +10,7 @@ import StrategyManager from "@/components/StrategyManager";
 import PositionsManager from "@/components/PositionsManager";
 import SignalsDisplay from "@/components/SignalsDisplay";
 import ApiKeySettings from "@/components/ApiKeySettings";
+import SystemLogs from "@/components/SystemLogs";
 
 import { marketDataService, CryptoPrice, CryptoStats } from "@/services/marketDataService";
 import { strategyService, StrategySignal } from "@/services/strategyService";
@@ -30,6 +32,34 @@ const Index = () => {
     athDate: "-",
     changeFromATH: "0%"
   });
+  const [logs, setLogs] = useState<string[]>([]);
+  
+  const updateIntervalRef = useRef<number | null>(null);
+  const tradingStarted = useRef<boolean>(strategyService.isRunning());
+
+  // Log interceptor
+  useEffect(() => {
+    const originalConsoleLog = console.log;
+    console.log = function(...args) {
+      originalConsoleLog.apply(console, args);
+      
+      // Only capture log entries in our format
+      const logString = args.join(' ');
+      if (logString.match(/^\[\d{2}:\d{2}:\d{2}\s[AP]M\]/)) {
+        setLogs(prev => {
+          const newLogs = [...prev, logString];
+          if (newLogs.length > 100) {
+            return newLogs.slice(newLogs.length - 100);
+          }
+          return newLogs;
+        });
+      }
+    };
+    
+    return () => {
+      console.log = originalConsoleLog;
+    };
+  }, []);
 
   // Initial data load
   useEffect(() => {
@@ -37,25 +67,30 @@ const Index = () => {
       try {
         setIsLoading(true);
         
+        console.log(`[${new Date().toLocaleTimeString()}] INFO    Initializing market data service`);
+        
         // Fetch initial Bitcoin stats
         const stats = await marketDataService.getBitcoinStats();
         setBtcStats(stats);
+        console.log(`[${new Date().toLocaleTimeString()}] INFO    Fetched current market stats for BTC`);
         
         // Fetch initial price data
-        const initialPriceData: CryptoPrice[] = [];
-        for (let i = 0; i < 30; i++) {
-          const priceData = await marketDataService.getBitcoinPrice();
-          // Add some random variance for historical data
-          initialPriceData.unshift({
-            ...priceData,
-            price: priceData.price * (1 + (Math.random() - 0.5) * 0.01),
-          });
-        }
-        
+        const initialPriceData = await marketDataService.getInitialPriceData();
         setChartData(initialPriceData);
+        console.log(`[${new Date().toLocaleTimeString()}] INFO    Loaded initial price history (${initialPriceData.length} data points)`);
+        
         setIsLoading(false);
+        
+        // Restore trading state from localstorage if it was running
+        const wasTradingActive = localStorage.getItem('tradingActive') === 'true';
+        if (wasTradingActive && !strategyService.isRunning()) {
+          console.log(`[${new Date().toLocaleTimeString()}] INFO    Automatically resuming trading session`);
+          strategyService.start();
+          tradingStarted.current = true;
+        }
       } catch (error) {
         console.error("Error fetching initial data:", error);
+        console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to initialize market data: ${error.message}`);
         setIsLoading(false);
       }
     };
@@ -64,10 +99,28 @@ const Index = () => {
     
     // Fetch trade history
     setTrades(tradingService.getPositions());
+    
+    // Save trading state when user leaves/refreshes
+    const handleBeforeUnload = () => {
+      localStorage.setItem('tradingActive', strategyService.isRunning().toString());
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (updateIntervalRef.current) {
+        clearInterval(updateIntervalRef.current);
+      }
+    };
   }, []);
 
   // Fetch data periodically
   useEffect(() => {
+    if (updateIntervalRef.current) {
+      clearInterval(updateIntervalRef.current);
+    }
+    
     const updateInterval = setInterval(async () => {
       if (!isLoading) {
         try {
@@ -103,14 +156,22 @@ const Index = () => {
           }
           
           // Update trades/positions
+          tradingService.updatePositions(newPrice.price);
           setTrades(tradingService.getPositions());
         } catch (error) {
           console.error("Error updating data:", error);
+          console.log(`[${new Date().toLocaleTimeString()}] ERROR   Data update failed: ${error.message}`);
         }
       }
     }, 5000); // Update every 5 seconds
+    
+    updateIntervalRef.current = updateInterval;
 
-    return () => clearInterval(updateInterval);
+    return () => {
+      if (updateIntervalRef.current) {
+        clearInterval(updateIntervalRef.current);
+      }
+    };
   }, [chartData, isLoading]);
 
   // Current price for calculations
@@ -161,8 +222,13 @@ const Index = () => {
             <StrategyManager />
           </div>
           
-          {/* Positions Manager */}
+          {/* System Logs */}
           <div className="lg:col-span-3 mt-4">
+            <SystemLogs logs={logs} />
+          </div>
+          
+          {/* Positions Manager */}
+          <div className="lg:col-span-3">
             <PositionsManager currentPrice={currentPrice} />
           </div>
           

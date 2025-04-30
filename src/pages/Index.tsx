@@ -11,6 +11,8 @@ import PositionsManager from "@/components/PositionsManager";
 import SignalsDisplay from "@/components/SignalsDisplay";
 import ApiKeySettings from "@/components/ApiKeySettings";
 import SystemLogs from "@/components/SystemLogs";
+import NewsStrategy from "@/components/NewsStrategy";
+import TradingDashboard from "@/components/TradingDashboard";
 
 import { marketDataService, CryptoPrice, CryptoStats } from "@/services/marketDataService";
 import { strategyService, StrategySignal } from "@/services/strategyService";
@@ -34,7 +36,7 @@ const Index = () => {
   });
   const [logs, setLogs] = useState<string[]>([]);
   
-  const updateIntervalRef = useRef<number | null>(null);
+  const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tradingStarted = useRef<boolean>(strategyService.isRunning());
 
   // Log interceptor
@@ -178,10 +180,12 @@ const Index = () => {
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : 0;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col dark:bg-dark-bg bg-slate-50">
       <Header />
       
       <main className="flex-1 p-4">
+        <TradingDashboard stats={tradingService.getStats()} />
+        
         {/* Main layout grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Price Cards */}
@@ -211,6 +215,11 @@ const Index = () => {
           
           <div className="lg:col-span-1">
             <SignalsDisplay signals={signals} />
+          </div>
+          
+          {/* News Strategy Section */}
+          <div className="lg:col-span-3">
+            <NewsStrategy />
           </div>
           
           {/* Stats and Strategy Manager */}

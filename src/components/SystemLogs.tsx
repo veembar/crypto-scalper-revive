@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -13,6 +13,8 @@ interface SystemLogsProps {
 const SystemLogs = ({ logs }: SystemLogsProps) => {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [filter, setFilter] = useState<string>("");
+  const [autoScroll, setAutoScroll] = useState<boolean>(true);
+  const logsContainerRef = useRef<HTMLDivElement>(null);
   
   // Parse log type from log string
   const getLogType = (log: string): string => {
@@ -35,6 +37,7 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
       if (activeTab === "trade" && !log.includes("TRADE")) return false;
       if (activeTab === "system" && !log.includes("SYSTEM")) return false;
       if (activeTab === "api" && !log.includes("API")) return false;
+      if (activeTab === "strategy" && !log.includes("STRATEGY")) return false;
     }
     
     // Filter by search term
@@ -44,6 +47,14 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
     
     return true;
   });
+  
+  // Autoscroll to the newest log entry
+  useEffect(() => {
+    if (autoScroll && logsContainerRef.current && logs.length > 0) {
+      const scrollContainer = logsContainerRef.current;
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
+  }, [logs, filteredLogs, autoScroll]);
   
   // Get CSS class for log type
   const getLogClass = (log: string): string => {
@@ -123,6 +134,18 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
             )}
           </div>
           
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={cn(
+              "text-xs",
+              autoScroll ? "text-green-400" : "text-muted-foreground"
+            )}
+            onClick={() => setAutoScroll(!autoScroll)}
+          >
+            Auto-scroll {autoScroll ? "On" : "Off"}
+          </Button>
+          
           <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
             <Filter className="h-4 w-4" />
           </Button>
@@ -148,10 +171,14 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
             <TabsTrigger value="trade">Trade Logs</TabsTrigger>
             <TabsTrigger value="system">System Logs</TabsTrigger>
             <TabsTrigger value="api">API Logs</TabsTrigger>
+            <TabsTrigger value="strategy">Strategy Logs</TabsTrigger>
           </TabsList>
           
           <TabsContent value={activeTab} className="mt-0">
-            <div className="h-[300px] overflow-y-auto border border-dark-border rounded-md bg-black/30 font-mono text-sm p-1">
+            <div 
+              ref={logsContainerRef}
+              className="h-[300px] overflow-y-auto border border-dark-border rounded-md bg-black/30 font-mono text-sm p-1"
+            >
               {filteredLogs.length > 0 ? (
                 filteredLogs.map((log, index) => (
                   <div 

@@ -40,6 +40,7 @@ class MarketDataService {
   private currentPriceSource: number = 0;
   private currentStatsSource: number = 0;
   private currentHistoricalSource: number = 0;
+  private newsApis: DataSource[] = [];
   
   constructor() {
     this.dataSources = {
@@ -76,20 +77,27 @@ class MarketDataService {
             };
           }
         },
+        // Fixing Alternative.me API parser issue
         {
           name: "Alternative.me",
-          url: "https://api.alternative.me/v2/ticker/bitcoin/?convert=USD",
+          url: "https://api.alternative.me/v1/ticker/bitcoin/",
           enabled: true,
           rateLimit: 15,
           usageCount: 0,
           lastUsed: 0,
           parser: (data) => {
             const now = new Date();
-            return {
-              price: parseFloat(data.data.bitcoin.quotes.USD.price),
-              time: now.toLocaleTimeString(),
-              date: now.toISOString()
-            };
+            try {
+              // Different response format in v1
+              return {
+                price: parseFloat(data.price),
+                time: now.toLocaleTimeString(),
+                date: now.toISOString()
+              };
+            } catch (error) {
+              console.error("Error parsing Alternative.me data:", error);
+              throw new Error("Invalid data format from Alternative.me");
+            }
           }
         },
         {
@@ -103,6 +111,23 @@ class MarketDataService {
             const now = new Date();
             return {
               price: parseFloat(data.data.amount),
+              time: now.toLocaleTimeString(),
+              date: now.toISOString()
+            };
+          }
+        },
+        // Adding a backup data source
+        {
+          name: "Binance",
+          url: "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
+          enabled: true,
+          rateLimit: 20,
+          usageCount: 0,
+          lastUsed: 0,
+          parser: (data) => {
+            const now = new Date();
+            return {
+              price: parseFloat(data.price),
               time: now.toLocaleTimeString(),
               date: now.toISOString()
             };
@@ -155,16 +180,45 @@ class MarketDataService {
             };
           }
         },
+        // Add Binance web scraper
+        {
+          name: "Web Scraper: Binance",
+          url: "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT",
+          enabled: true,
+          rateLimit: 5,
+          usageCount: 0,
+          lastUsed: 0,
+          parser: (data) => {
+            console.log(`[${new Date().toLocaleTimeString()}] API     Web scraping data from Binance`);
+            const currentPrice = parseFloat(data.lastPrice);
+            const priceChange = parseFloat(data.priceChange);
+            const priceChangePercent = parseFloat(data.priceChangePercent);
+            const volume = parseFloat(data.volume) * currentPrice;
+            
+            // Get current market stats
+            return {
+              currentPrice: currentPrice.toLocaleString(),
+              change24h: priceChange,
+              changePercent: `${priceChangePercent.toFixed(2)}%`,
+              marketCap: `$${(currentPrice * 19.5 / 1e9).toFixed(1)}B`,
+              volume24h: `$${(volume / 1e9).toFixed(1)}B`,
+              circulatingSupply: `19.5M BTC`,
+              allTimeHigh: `$69,000`,
+              athDate: `Nov 10, 2021`,
+              changeFromATH: `-${((1 - (currentPrice / 69000)) * 100).toFixed(1)}%`
+            };
+          }
+        },
+        // Add FTX Stats
         {
           name: "Web Scraper: CoinMarketCap",
-          url: "https://scrapeops.io/api/v1/fetch?api_key=demo-key&url=https://coinmarketcap.com/currencies/bitcoin&residential=true",
-          enabled: true,
+          url: "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC",
+          enabled: false, // Disabled because it requires API key
           rateLimit: 2,
           usageCount: 0,
           lastUsed: 0,
           parser: (data) => {
-            // This is a simulated web scraper response
-            // In a real app, you would extract data from the HTML
+            // Simulated web scraper response
             console.log(`[${new Date().toLocaleTimeString()}] API     Web scraping data from CoinMarketCap via proxy`);
             
             const currentPrice = 30000 + Math.random() * 5000;
@@ -202,33 +256,114 @@ class MarketDataService {
             }));
           }
         },
+        // Add Binance historical data
+        {
+          name: "Binance Historical",
+          url: "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=30",
+          enabled: true,
+          rateLimit: 10,
+          usageCount: 0,
+          lastUsed: 0,
+          parser: (data) => {
+            console.log(`[${new Date().toLocaleTimeString()}] API     Fetched historical data from Binance`);
+            return data.map((item: any) => ({
+              price: parseFloat(item[4]), // Close price
+              time: new Date(item[0]).toLocaleTimeString(),
+              date: new Date(item[0]).toISOString()
+            }));
+          }
+        },
+        // Use a different API for Alternative.me
         {
           name: "Alternative API Historical",
-          url: "https://api.alternative.me/v2/historical/bitcoin/?timespan=1h&format=json",
+          url: "https://api.alternative.me/v1/ticker/bitcoin/",
           enabled: true,
           rateLimit: 3,
           usageCount: 0,
           lastUsed: 0,
           parser: (data) => {
-            // This API returns data in a different format, we'll simulate it
+            // This API returns current data, so we'll generate historical data based on it
             console.log(`[${new Date().toLocaleTimeString()}] API     Fetched historical data from alternative API`);
-            const basePrice = 30000 + Math.random() * 5000;
-            const prices = [];
             
-            for (let i = 30; i > 0; i--) {
-              const time = new Date(Date.now() - i * 60000);
-              prices.push({
-                price: basePrice * (1 + (Math.random() - 0.5) * 0.02),
-                time: time.toLocaleTimeString(),
-                date: time.toISOString()
-              });
+            try {
+              const basePrice = parseFloat(data.price);
+              const prices = [];
+              
+              for (let i = 30; i > 0; i--) {
+                const time = new Date(Date.now() - i * 60000);
+                prices.push({
+                  price: basePrice * (1 + (Math.random() - 0.5) * 0.02),
+                  time: time.toLocaleTimeString(),
+                  date: time.toISOString()
+                });
+              }
+              
+              return prices;
+            } catch (error) {
+              console.error("Error parsing Alternative.me historical data:", error);
+              throw new Error("Invalid data format from Alternative.me");
             }
-            
-            return prices;
           }
         }
       ]
     };
+
+    // Initialize news APIs
+    this.newsApis = [
+      {
+        name: "CryptoCompare News",
+        url: "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=BTC",
+        enabled: true,
+        rateLimit: 5,
+        usageCount: 0,
+        lastUsed: 0,
+        parser: (data) => {
+          return data.Data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            body: item.body,
+            url: item.url,
+            source: item.source,
+            published_at: new Date(item.published_on * 1000).toISOString(),
+            imageUrl: item.imageurl
+          }));
+        }
+      },
+      {
+        name: "Coindesk Web Scraper",
+        url: "https://www.coindesk.com/arc/outboundfeeds/rss/?outputType=json",
+        enabled: true,
+        rateLimit: 3,
+        usageCount: 0,
+        lastUsed: 0,
+        parser: (data) => {
+          // This is a simulated response for scraping
+          console.log(`[${new Date().toLocaleTimeString()}] API     Web scraping news from Coindesk`);
+          
+          // Mock data for web scraping demo
+          return [
+            {
+              id: "cd-1",
+              title: "Bitcoin Bull Run Expected as Inflation Data Shows Positive Trend",
+              body: "Analysts predict a potential Bitcoin bull run as recent inflation data shows positive trends.",
+              url: "https://www.coindesk.com/article1",
+              source: "Coindesk",
+              published_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+              imageUrl: "https://www.coindesk.com/image1.jpg"
+            },
+            {
+              id: "cd-2",
+              title: "Major Financial Institution Announces Bitcoin Integration",
+              body: "A major financial institution has announced plans to integrate Bitcoin into their services.",
+              url: "https://www.coindesk.com/article2",
+              source: "Coindesk",
+              published_at: new Date(Date.now() - 5 * 3600000).toISOString(),
+              imageUrl: "https://www.coindesk.com/image2.jpg"
+            }
+          ];
+        }
+      }
+    ];
   }
 
   // Get the current status of API usage
@@ -436,6 +571,45 @@ class MarketDataService {
       athDate: "Nov 10, 2021",
       changeFromATH: "-54.3%"
     };
+  }
+
+  // Get crypto news from available sources
+  public async getCryptoNews() {
+    for (const newsApi of this.newsApis) {
+      if (newsApi.enabled && this._canUseSource(newsApi)) {
+        try {
+          newsApi.usageCount++;
+          newsApi.lastUsed = Date.now();
+          
+          console.log(`[${new Date().toLocaleTimeString()}] API     Fetching news from ${newsApi.name}`);
+          const response = await fetch(newsApi.url);
+          const data = await response.json();
+          
+          return newsApi.parser(data);
+        } catch (error) {
+          console.error(`Error fetching from ${newsApi.name}:`, error);
+          console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to fetch news from ${newsApi.name}: ${error.message}`);
+          
+          newsApi.enabled = false;
+          setTimeout(() => {
+            newsApi.enabled = true;
+          }, 60000);
+        }
+      }
+    }
+    
+    // If all sources failed, return mock data
+    console.log(`[${new Date().toLocaleTimeString()}] WARNING All news APIs unavailable, using fallback data`);
+    return [
+      {
+        id: "mock-1",
+        title: "Bitcoin Price Analysis: BTC Consolidates Above $30K",
+        body: "Bitcoin continues to consolidate above $30,000 as markets await the next catalyst.",
+        source: "MockNews",
+        published_at: new Date().toISOString(),
+        url: "#"
+      }
+    ];
   }
   
   // Check if a source can be used based on rate limits

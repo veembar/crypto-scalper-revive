@@ -1,17 +1,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Position } from "@/services/tradingService";
 
 interface TradeHistoryProps {
-  trades: {
-    id: string;
-    type: string;
-    amount: string;
-    price: string;
-    date: string;
-    profit: string;
-    isProfit: boolean;
-  }[];
+  trades: Position[];
 }
 
 const TradeHistory = ({ trades }: TradeHistoryProps) => {
@@ -39,14 +32,22 @@ const TradeHistory = ({ trades }: TradeHistoryProps) => {
                 )}>
                   {trade.type}
                 </span>
-                <span className="text-sm">{trade.amount}</span>
-                <span className="text-sm">${trade.price}</span>
-                <span className="text-sm text-muted-foreground">{trade.date}</span>
+                <span className="text-sm">{trade.amount} BTC</span>
+                <span className="text-sm">${trade.price.toLocaleString()}</span>
+                <span className="text-sm text-muted-foreground">
+                  {new Date(trade.timestamp).toLocaleTimeString()}
+                </span>
                 <span className={cn(
                   "text-sm font-medium text-right",
-                  trade.isProfit ? "text-profit" : "text-loss"
+                  (trade.profit || 0) >= 0 ? "text-profit" : "text-loss"
                 )}>
-                  {trade.profit}
+                  {trade.profit !== undefined ? (
+                    <>
+                      {trade.profit >= 0 ? "+" : ""}{trade.profit.toFixed(2)}
+                    </>
+                  ) : (
+                    "-"
+                  )}
                 </span>
               </div>
             ))

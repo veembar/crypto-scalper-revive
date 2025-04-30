@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Newspaper, Trending, AlertTriangle, ArrowRightCircle } from "lucide-react";
+import { Newspaper, TrendingUp, AlertTriangle, ArrowRightCircle } from "lucide-react";
 
 // Array of crypto news with sentiment and trading signals
 const cryptoNews = [
@@ -166,7 +166,7 @@ const NewsStrategy = () => {
                     
                     <div className="mt-3 pt-2 border-t border-dark-border flex items-center justify-between">
                       <div className="flex items-center">
-                        <Trending className="w-4 h-4 mr-1 text-blue-400" />
+                        <TrendingUp className="w-4 h-4 mr-1 text-blue-400" />
                         <span className="text-xs">Signal:</span>
                       </div>
                       <span className={`text-xs font-medium ${
@@ -207,3 +207,4 @@ const NewsStrategy = () => {
 };
 
 export default NewsStrategy;
+

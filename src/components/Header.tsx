@@ -16,15 +16,20 @@ import {
   LogOut, 
   Menu, 
   BellRing,
-  Database 
+  Database,
+  AlertCircle
 } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { useTheme } from "@/hooks/useTheme";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import NotificationsPanel from "./NotificationsPanel";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme } = useTheme();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [hasNotifications] = useState(true);
   
   const handleSettingsClick = () => {
     toast.success("Settings panel opened");
@@ -47,12 +52,31 @@ const Header = () => {
           
           <ThemeSwitcher />
           
+          {/* Notification Button with indicator */}
+          <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="w-9 h-9 sm:w-10 sm:h-10 transition-all bg-secondary/30 hover:bg-secondary/50 relative"
+              >
+                <BellRing className="h-[1.2rem] w-[1.2rem]" />
+                {hasNotifications && (
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-red-500 text-white">
+                    <span className="text-[10px]">3</span>
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <NotificationsPanel />
+          </DropdownMenu>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="w-9 h-9 sm:w-10 sm:h-10 transition-all"
+                className="w-9 h-9 sm:w-10 sm:h-10 transition-all bg-secondary/30 hover:bg-secondary/50"
                 onClick={handleSettingsClick}
               >
                 <Settings className="h-[1.2rem] w-[1.2rem]" />
@@ -66,20 +90,15 @@ const Header = () => {
                 <span>API Configuration</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
+                <AlertCircle className="mr-2 h-4 w-4" />
+                <span>Kraken API Guidelines</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
                 <BellRing className="mr-2 h-4 w-4" />
                 <span>Notification Settings</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          <Button variant="outline" size="icon" className="w-9 h-9 sm:w-10 sm:h-10 transition-all">
-            <LogOut className="h-[1.2rem] w-[1.2rem]" />
-          </Button>
         </div>
         
         {/* Mobile menu */}
@@ -88,7 +107,7 @@ const Header = () => {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" className="bg-secondary/30 hover:bg-secondary/50">
                 <Menu className="h-[1.2rem] w-[1.2rem]" />
               </Button>
             </DropdownMenuTrigger>
@@ -105,10 +124,9 @@ const Header = () => {
                 <BellRing className="mr-2 h-4 w-4" />
                 <span>Notifications</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
+                <AlertCircle className="mr-2 h-4 w-4" />
+                <span>Kraken API Guidelines</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

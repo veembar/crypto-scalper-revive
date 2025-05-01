@@ -12,7 +12,7 @@ interface SystemLogsProps {
 
 const SystemLogs = ({ logs }: SystemLogsProps) => {
   const [filter, setFilter] = useState<string | null>(null);
-  const [autoscroll, setAutoscroll] = useState<boolean>(false);
+  const [autoscroll, setAutoscroll] = useState<boolean>(true);
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const [filteredLogs, setFilteredLogs] = useState<string[]>([]);
@@ -26,10 +26,21 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
     }
   }, [logs, filter]);
   
-  // Handle autoscroll behavior
+  // Handle autoscroll behavior ONLY for the logs container, not the whole page
   useEffect(() => {
     if (autoscroll && logsContainerRef.current) {
-      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+      // Use scrollIntoView with behavior: "auto" to prevent smooth scrolling affecting the whole page
+      const scrollToBottom = () => {
+        if (logsContainerRef.current) {
+          const lastChild = logsContainerRef.current.lastElementChild;
+          if (lastChild) {
+            lastChild.scrollIntoView({ behavior: "auto", block: "end" });
+          }
+        }
+      };
+      
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(scrollToBottom);
     }
   }, [filteredLogs, autoscroll]);
   
@@ -63,6 +74,7 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
     if (log.includes('API')) return 'text-green-400';
     if (log.includes('SIGNAL')) return 'text-yellow-400';
     if (log.includes('TRADE')) return 'text-purple-400';
+    if (log.includes('KRAKEN')) return 'text-cyan-400';
     return 'text-muted-foreground';
   };
   
@@ -82,7 +94,8 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
     { name: 'INFO', color: 'border-blue-500 text-blue-400' },
     { name: 'API', color: 'border-green-500 text-green-400' },
     { name: 'SIGNAL', color: 'border-yellow-500 text-yellow-400' },
-    { name: 'TRADE', color: 'border-purple-500 text-purple-400' }
+    { name: 'TRADE', color: 'border-purple-500 text-purple-400' },
+    { name: 'KRAKEN', color: 'border-cyan-500 text-cyan-400' }
   ];
 
   return (
@@ -159,6 +172,7 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
         <div 
           ref={logsContainerRef}
           className="logs-container bg-dark-border/10 border border-dark-border rounded-lg p-2 font-mono text-sm h-96 overflow-y-auto scroll-container"
+          style={{ scrollBehavior: 'auto' }}
         >
           {filteredLogs.length > 0 ? (
             filteredLogs.map((log, index) => (

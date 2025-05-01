@@ -47,7 +47,7 @@ const App = () => {
       /* Stop auto-scrolling of logs */
       .logs-container {
         overflow-y: auto;
-        scroll-behavior: auto;
+        scroll-behavior: auto !important;
         max-height: 400px;
       }
       
@@ -98,29 +98,6 @@ const App = () => {
           gap: 1rem;
         }
       }
-      
-      /* Custom theme enhancements */
-      .midnight {
-        --background: 232 51% 6%;
-        --foreground: 0 0% 98%;
-        --card: 232 51% 8%;
-        --card-foreground: 0 0% 98%;
-        --popover: 232 51% 8%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 246 80% 60%;
-        --primary-foreground: 0 0% 100%;
-        --secondary: 232 51% 12%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 232 51% 12%;
-        --muted-foreground: 240 5% 64.9%;
-        --accent: 246 80% 40%;
-        --accent-foreground: 0 0% 100%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 232 51% 15%;
-        --input: 232 51% 12%;
-        --ring: 246 80% 60%;
-      }
     `;
     
     const existingStyle = document.getElementById('fix-scroll-behavior');
@@ -131,9 +108,6 @@ const App = () => {
     
     // Prevent automatic scrolling
     window.history.scrollRestoration = 'manual';
-    
-    // Reset scroll position on load
-    window.scrollTo(0, 0);
     
     // Fix for Safari/iOS
     document.body.style.minHeight = '100%';
@@ -151,11 +125,10 @@ const App = () => {
       <ThemeProvider>
         <TooltipProvider>
           <Toaster />
-          <Sonner closeButton position="top-right" />
+          <Sonner closeButton position="top-right" theme="dark" expand={true} richColors={true} />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

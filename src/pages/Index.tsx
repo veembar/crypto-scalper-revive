@@ -1,5 +1,4 @@
 
-// In this file, we're going to modify the layout to better use the space
 import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
 import PriceCard from "@/components/PriceCard";
@@ -14,6 +13,7 @@ import ApiKeySettings from "@/components/ApiKeySettings";
 import SystemLogs from "@/components/SystemLogs";
 import NewsStrategy from "@/components/NewsStrategy";
 import TradingDashboard from "@/components/TradingDashboard";
+import KrakenApiGuidelines from "@/components/KrakenApiGuidelines";
 
 import { marketDataService, CryptoPrice, CryptoStats } from "@/services/marketDataService";
 import { strategyService } from "@/services/strategyService";
@@ -270,8 +270,14 @@ const Index = () => {
             <StrategyManager />
           </div>
           
-          <div className="lg:col-span-12">
+          {/* News Section */}
+          <div className="lg:col-span-8">
             <NewsStrategy />
+          </div>
+          
+          {/* Kraken API Guidelines */}
+          <div className="lg:col-span-4">
+            <KrakenApiGuidelines />
           </div>
           
           {/* Positions Manager */}
@@ -286,7 +292,7 @@ const Index = () => {
           
           {/* Trade History */}
           <div className="lg:col-span-12">
-            <TradeHistory trades={trades} />
+            <TradeHistory trades={tradingService.getPositions()} />
           </div>
         </div>
       </main>

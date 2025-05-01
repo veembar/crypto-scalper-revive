@@ -48,96 +48,119 @@
   --ring: 240 4.9% 83.9%;
 }
 
-/* Cyberpunk theme */
+/* Cyberpunk theme - more vibrant */
 .cyberpunk {
-  --background: 235 24% 9%;
-  --foreground: 180 100% 60%;
-  --card: 235 24% 11%;
-  --card-foreground: 180 100% 60%;
-  --popover: 235 24% 11%;
-  --popover-foreground: 180 100% 60%;
-  --primary: 320 100% 50%;
+  --background: 235 35% 8%;
+  --foreground: 180 100% 65%;
+  --card: 235 35% 10%;
+  --card-foreground: 180 100% 65%;
+  --popover: 235 35% 10%;
+  --popover-foreground: 180 100% 65%;
+  --primary: 320 100% 55%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 195 80% 40%;
+  --secondary: 195 85% 40%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 235 24% 17%;
-  --muted-foreground: 180 12% 60%;
-  --accent: 263 80% 50%;
+  --muted: 235 35% 15%;
+  --muted-foreground: 180 15% 65%;
+  --accent: 263 85% 55%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 90% 50%;
+  --destructive: 0 90% 55%;
   --destructive-foreground: 0 0% 100%;
-  --border: 320 100% 40%;
-  --input: 235 24% 17%;
-  --ring: 320 100% 50%;
+  --border: 320 100% 45%;
+  --input: 235 35% 15%;
+  --ring: 320 100% 55%;
 }
 
-/* Ocean Blue theme */
+/* Ocean Blue theme - enhanced */
 .ocean {
-  --background: 214 37% 5%;
-  --foreground: 210 40% 98%;
-  --card: 214 37% 10%;
-  --card-foreground: 210 40% 98%;
-  --popover: 214 37% 10%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 198 93% 60%;
+  --background: 214 45% 6%;
+  --foreground: 210 45% 98%;
+  --card: 214 45% 10%;
+  --card-foreground: 210 45% 98%;
+  --popover: 214 45% 10%;
+  --popover-foreground: 210 45% 98%;
+  --primary: 198 95% 65%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 20%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 214 37% 15%;
-  --muted-foreground: 210 40% 70%;
-  --accent: 198 93% 40%;
+  --secondary: 210 45% 20%;
+  --secondary-foreground: 210 45% 98%;
+  --muted: 214 45% 15%;
+  --muted-foreground: 210 45% 75%;
+  --accent: 198 95% 45%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
+  --destructive: 0 85% 65%;
   --destructive-foreground: 0 0% 98%;
-  --border: 214 37% 20%;
-  --input: 214 37% 15%;
-  --ring: 198 93% 60%;
+  --border: 214 45% 20%;
+  --input: 214 45% 15%;
+  --ring: 198 95% 65%;
 }
 
-/* Terminal theme */
+/* Terminal theme - enhanced */
 .terminal {
-  --background: 0 0% 0%;
-  --foreground: 135 94% 39%;
-  --card: 0 0% 5%;
-  --card-foreground: 135 94% 39%;
-  --popover: 0 0% 5%;
-  --popover-foreground: 135 94% 39%;
-  --primary: 135 94% 39%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 0 0% 10%;
-  --secondary-foreground: 135 94% 39%;
+  --background: 0 0% 5%;
+  --foreground: 135 95% 45%;
+  --card: 0 0% 8%;
+  --card-foreground: 135 95% 45%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 135 95% 45%;
+  --primary: 135 95% 45%;
+  --primary-foreground: 0 0% 5%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 135 95% 45%;
   --muted: 0 0% 15%;
-  --muted-foreground: 135 94% 30%;
-  --accent: 135 94% 20%;
-  --accent-foreground: 135 94% 60%;
-  --destructive: 0 84% 60%;
+  --muted-foreground: 135 95% 35%;
+  --accent: 135 95% 25%;
+  --accent-foreground: 135 95% 65%;
+  --destructive: 0 85% 65%;
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 20%;
-  --input: 0 0% 10%;
-  --ring: 135 94% 39%;
+  --border: 0 0% 25%;
+  --input: 0 0% 12%;
+  --ring: 135 95% 45%;
 }
 
-/* Midnight theme */
+/* Midnight theme - enhanced for high contrast */
 .midnight {
-  --background: 232 51% 6%;
-  --foreground: 0 0% 98%;
-  --card: 232 51% 8%;
-  --card-foreground: 0 0% 98%;
-  --popover: 232 51% 8%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 246 80% 60%;
+  --background: 232 60% 5%;
+  --foreground: 220 25% 95%;
+  --card: 232 60% 7%;
+  --card-foreground: 220 25% 95%;
+  --popover: 232 60% 7%;
+  --popover-foreground: 220 25% 95%;
+  --primary: 246 85% 65%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 232 51% 12%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 232 51% 12%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 246 80% 40%;
+  --secondary: 232 60% 12%;
+  --secondary-foreground: 220 25% 95%;
+  --muted: 232 60% 12%;
+  --muted-foreground: 240 30% 70%;
+  --accent: 246 85% 45%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 62.8% 30.6%;
+  --destructive: 0 85% 60%;
   --destructive-foreground: 0 0% 98%;
-  --border: 232 51% 15%;
-  --input: 232 51% 12%;
-  --ring: 246 80% 60%;
+  --border: 232 60% 15%;
+  --input: 232 60% 12%;
+  --ring: 246 85% 65%;
+}
+
+/* Pro Dark theme - new high contrast theme */
+.pro-dark {
+  --background: 240 25% 6%;
+  --foreground: 210 40% 98%;
+  --card: 240 25% 8%;
+  --card-foreground: 210 40% 98%;
+  --popover: 240 25% 8%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 25% 13%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 240 25% 13%;
+  --muted-foreground: 240 25% 80%;
+  --accent: 217 91% 45%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 25% 14%;
+  --input: 240 25% 13%;
+  --ring: 217 91% 60%;
 }
 
 @layer base {
@@ -147,12 +170,18 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Prevent auto-scrolling */
+  .scroll-container {
+    @apply overflow-auto;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Animation for data updates */
 @keyframes pulse-light {
   0%, 100% {
-    opacity: 0.6;
+    opacity: 0.7;
   }
   50% {
     opacity: 1;
@@ -183,14 +212,115 @@
 }
 
 ::-webkit-scrollbar-track {
-  background-color: hsl(var(--background));
+  @apply bg-background/50 rounded-md;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--muted));
-  border-radius: 4px;
+  @apply bg-muted rounded-md;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--accent));
+  @apply bg-accent;
+}
+
+/* System logs styling */
+.logs-container {
+  max-height: 400px;
+  overflow-y: auto;
+  scroll-behavior: auto !important;
+}
+
+.log-entry {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.log-error {
+  @apply text-red-400;
+}
+
+.log-info {
+  @apply text-blue-400;
+}
+
+.log-api {
+  @apply text-green-400;
+}
+
+.log-signal {
+  @apply text-yellow-400;
+}
+
+.log-trade {
+  @apply text-purple-400;
+}
+
+/* Trade cards */
+.trade-card {
+  @apply border border-dark-border rounded-lg p-3 transition-all duration-200;
+}
+
+.trade-card:hover {
+  @apply border-primary/30 bg-primary/5;
+}
+
+/* Badge effects */
+.badge-glow {
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Button effects */
+.button-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-glow::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  transform: rotate(30deg);
+  transition: transform 0.5s;
+}
+
+.button-glow:hover::after {
+  transform: rotate(30deg) translate(0%, 50%);
+}
+
+/* Chart enhancements */
+.chart-grid line {
+  @apply stroke-muted/30;
+}
+
+.chart-grid path {
+  stroke: none;
+}
+
+.chart-text {
+  @apply fill-muted-foreground;
+  font-size: 0.7rem;
+}
+
+.chart-line {
+  @apply stroke-primary;
+  stroke-width: 2;
+}
+
+/* Settings panel styling */
+.settings-row {
+  @apply flex items-center justify-between p-2 rounded-md hover:bg-muted/10 transition-colors;
+}
+
+.settings-icon {
+  @apply w-5 h-5 text-muted-foreground mr-3;
 }

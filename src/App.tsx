@@ -20,59 +20,106 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  // Apply theme from localStorage on app start
+  // Apply theme from localStorage on app start and fix scrolling issues
   useEffect(() => {
     const savedTheme = localStorage.getItem('btc-scalper-theme');
-    if (savedTheme) {
-      document.documentElement.className = '';
-      document.documentElement.classList.add(savedTheme);
-    } else {
-      // Default theme
-      document.documentElement.className = '';
-      document.documentElement.classList.add('dark');
-    }
+    // Default to 'midnight' theme if none is set
+    const theme = savedTheme || 'midnight';
     
-    // Fix auto-scrolling issue with CSS
+    document.documentElement.className = '';
+    document.documentElement.classList.add(theme);
+    localStorage.setItem('btc-scalper-theme', theme);
+    
+    // Fix scrolling issues with custom CSS
     const style = document.createElement('style');
     style.id = 'fix-scroll-behavior';
     style.textContent = `
       html, body {
         scroll-behavior: auto !important;
         overflow-x: hidden;
+        height: 100%;
       }
       
-      /* Make scrollbar visible */
+      body {
+        overflow-y: auto;
+      }
+      
+      /* Stop auto-scrolling of logs */
+      .logs-container {
+        overflow-y: auto;
+        scroll-behavior: auto;
+        max-height: 400px;
+      }
+      
+      .logs-container::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+      }
+      
+      .logs-container::-webkit-scrollbar {
+        width: 8px;
+        background-color: rgba(0, 0, 0, 0.2);
+      }
+      
+      .logs-container::-webkit-scrollbar-track {
+        background-color: transparent;
+      }
+      
+      /* Enhance scrollbars for better visibility */
       ::-webkit-scrollbar {
         width: 10px;
         height: 10px;
       }
       
       ::-webkit-scrollbar-track {
-        background: var(--background, #121212);
+        background: rgba(0, 0, 0, 0.2);
         border-radius: 5px;
       }
       
       ::-webkit-scrollbar-thumb {
-        background: var(--border-color, #333);
+        background: rgba(255, 255, 255, 0.2);
         border-radius: 5px;
       }
       
       ::-webkit-scrollbar-thumb:hover {
-        background: var(--accent-color, #555);
+        background: rgba(255, 255, 255, 0.3);
       }
       
-      /* Improve overall spacing */
+      /* Overall improved spacing */
       .container-fluid {
         padding: 0 1rem;
       }
       
-      /* More efficient use of space */
+      /* More efficient layout */
       @media (min-width: 1024px) {
         .lg-compact-layout {
           display: grid;
           grid-template-columns: repeat(12, 1fr);
           gap: 1rem;
         }
+      }
+      
+      /* Custom theme enhancements */
+      .midnight {
+        --background: 232 51% 6%;
+        --foreground: 0 0% 98%;
+        --card: 232 51% 8%;
+        --card-foreground: 0 0% 98%;
+        --popover: 232 51% 8%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 246 80% 60%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 232 51% 12%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 232 51% 12%;
+        --muted-foreground: 240 5% 64.9%;
+        --accent: 246 80% 40%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 232 51% 15%;
+        --input: 232 51% 12%;
+        --ring: 246 80% 60%;
       }
     `;
     
@@ -87,6 +134,16 @@ const App = () => {
     
     // Reset scroll position on load
     window.scrollTo(0, 0);
+    
+    // Fix for Safari/iOS
+    document.body.style.minHeight = '100%';
+    document.body.style.position = 'relative';
+    
+    return () => {
+      if (document.getElementById('fix-scroll-behavior')) {
+        document.getElementById('fix-scroll-behavior')?.remove();
+      }
+    };
   }, []);
 
   return (

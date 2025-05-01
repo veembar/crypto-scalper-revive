@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Wallet, TrendingUp, TrendingDown, CircleDollarSign, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,22 +10,27 @@ interface TradingDashboardProps {
 }
 
 const TradingDashboard = ({ stats }: TradingDashboardProps) => {
-  // Moving from useMemo to useState to avoid React hooks issues
-  const [profitColor] = useState(stats.profitToday >= 0 ? "text-green-400" : "text-red-400");
-  const [profitIcon] = useState(stats.profitToday >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />);
-  const [totalProfitColor] = useState(stats.totalProfit >= 0 ? "text-green-400" : "text-red-400");
+  const [profitColor, setProfitColor] = useState(stats.profitToday >= 0 ? "text-green-400" : "text-red-400");
+  const [profitIcon, setProfitIcon] = useState(stats.profitToday >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />);
+  const [totalProfitColor, setTotalProfitColor] = useState(stats.totalProfit >= 0 ? "text-green-400" : "text-red-400");
   
+  // Update colors and icons when stats change
+  useEffect(() => {
+    setProfitColor(stats.profitToday >= 0 ? "text-green-400" : "text-red-400");
+    setProfitIcon(stats.profitToday >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />);
+    setTotalProfitColor(stats.totalProfit >= 0 ? "text-green-400" : "text-red-400");
+  }, [stats]);
+  
+  // Calculate win rate
   const winRatePercentage = stats.winRate * 100;
-  let winRateColor = "text-red-400";
-  if (winRatePercentage >= 60) {
-    winRateColor = "text-green-400";
-  } else if (winRatePercentage >= 50) {
+  let winRateColor = "text-green-400";
+  if (winRatePercentage < 95) {
     winRateColor = "text-yellow-400";
   }
   
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-4">
-      <Card className="bg-dark-card border-dark-border overflow-hidden">
+      <Card className="bg-card border-dark-border overflow-hidden">
         <CardContent className="p-0">
           <div className="flex items-center p-4">
             <div className="bg-primary/10 rounded-full p-2 mr-3">
@@ -33,7 +38,7 @@ const TradingDashboard = ({ stats }: TradingDashboardProps) => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Paper Trading Balance</p>
-              <h3 className="text-2xl font-semibold">${stats.paperBalance.toLocaleString()}</h3>
+              <h3 className="text-2xl font-semibold">${stats.paperBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</h3>
             </div>
           </div>
           <div className="bg-dark-border/20 p-2 text-xs flex justify-between">
@@ -45,7 +50,7 @@ const TradingDashboard = ({ stats }: TradingDashboardProps) => {
         </CardContent>
       </Card>
       
-      <Card className="bg-dark-card border-dark-border overflow-hidden">
+      <Card className="bg-card border-dark-border overflow-hidden">
         <CardContent className="p-0">
           <div className="flex items-center p-4">
             <div className={cn(
@@ -71,7 +76,7 @@ const TradingDashboard = ({ stats }: TradingDashboardProps) => {
         </CardContent>
       </Card>
       
-      <Card className="bg-dark-card border-dark-border overflow-hidden">
+      <Card className="bg-card border-dark-border overflow-hidden">
         <CardContent className="p-0">
           <div className="flex items-center p-4">
             <div className="bg-blue-500/10 rounded-full p-2 mr-3">
@@ -92,27 +97,26 @@ const TradingDashboard = ({ stats }: TradingDashboardProps) => {
         </CardContent>
       </Card>
       
-      <Card className="bg-dark-card border-dark-border overflow-hidden">
+      <Card className="bg-card border-dark-border overflow-hidden">
         <CardContent className="p-0">
           <div className="flex items-center p-4">
-            <div className="bg-yellow-500/10 rounded-full p-2 mr-3">
-              <BarChart3 className="h-5 w-5 text-yellow-400" />
+            <div className="bg-green-500/10 rounded-full p-2 mr-3">
+              <BarChart3 className="h-5 w-5 text-green-400" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Win Rate</p>
               <h3 className={cn("text-2xl font-semibold", winRateColor)}>
-                {winRatePercentage.toFixed(1)}%
+                {winRatePercentage.toFixed(1)}% 
+                {winRatePercentage >= 98 && (
+                  <span className="text-xs text-green-400 ml-1">HIGH PRECISION</span>
+                )}
               </h3>
             </div>
           </div>
           <div className="bg-dark-border/20 p-2">
             <div className="h-1.5 bg-dark-border w-full rounded-full overflow-hidden">
               <div 
-                className={cn(
-                  "h-full rounded-full",
-                  winRatePercentage >= 60 ? "bg-green-400" :
-                  winRatePercentage >= 50 ? "bg-yellow-400" : "bg-red-400"
-                )}
+                className="h-full rounded-full bg-green-400"
                 style={{ width: `${winRatePercentage}%` }}
               />
             </div>

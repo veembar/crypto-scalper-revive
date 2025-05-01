@@ -22,7 +22,7 @@ import {
   ArrowUpRight 
 } from "lucide-react";
 import { toast } from "sonner";
-import { strategyServiceExtended } from "@/services/strategyService";
+import { strategyService } from "@/services/strategyService";
 
 // Define news sources
 const newsSources = [
@@ -134,7 +134,7 @@ const NewsStrategy = () => {
       const sentiment = sentimentEffects.find(s => s.id === mostBullish.sentiment);
       
       if (sentiment) {
-        const signal = strategyServiceExtended.generateSignal(
+        const signal = strategyService.generateSignal(
           "NewsStrategy",
           `Bullish news: ${mostBullish.title}`,
           sentiment.probability
@@ -152,7 +152,7 @@ const NewsStrategy = () => {
       const sentiment = sentimentEffects.find(s => s.id === mostBearish.sentiment);
       
       if (sentiment) {
-        const signal = strategyServiceExtended.generateSignal(
+        const signal = strategyService.generateSignal(
           "NewsStrategy",
           `Bearish news: ${mostBearish.title}`,
           sentiment.probability

@@ -1,15 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Play, Pause, AlertTriangle, Search, ArrowUpDown } from "lucide-react";
-import { 
-  strategyService, 
-  Strategy, 
-  BacktestResult 
-} from "@/services/strategyService";
+import { strategyService } from "@/services/strategyService";
+import { Strategy, BacktestResult } from "@/services/strategyTypes";
 import { tradingService } from "@/services/tradingService";
 import { cn } from "@/lib/utils";
 

@@ -16,7 +16,8 @@ import NewsStrategy from "@/components/NewsStrategy";
 import TradingDashboard from "@/components/TradingDashboard";
 
 import { marketDataService, CryptoPrice, CryptoStats } from "@/services/marketDataService";
-import { strategyServiceExtended as strategyService, StrategySignal } from "@/services/strategyService";
+import { strategyService } from "@/services/strategyService";
+import { StrategySignal } from "@/services/strategyTypes";
 import { tradingService } from "@/services/tradingService";
 import { toast } from "sonner";
 

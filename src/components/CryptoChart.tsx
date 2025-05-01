@@ -201,132 +201,138 @@ const CryptoChart = ({ data, title, isLoading = false }: CryptoChartProps) => {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              {chartType === "area" && (
-                <AreaChart
-                  data={data}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
-                  <XAxis
-                    dataKey="time"
-                    tickFormatter={formatXAxis}
-                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
-                    axisLine={false}
-                    tickLine={false}
-                    minTickGap={30}
-                  />
-                  <YAxis
-                    tickFormatter={formatYAxis}
-                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={60}
-                    domain={[minPrice, maxPrice]}
-                    padding={{ top: 10, bottom: 10 }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  {data.length > 1 && (
-                    <ReferenceLine
-                      y={data[0].price}
-                      stroke="#718096"
-                      strokeDasharray="3 3"
-                    />
-                  )}
-                  <Area
-                    type="monotone"
-                    dataKey="price"
-                    stroke={chartColor}
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorPrice)"
-                    animationDuration={300}
-                    activeDot={{ r: 6, strokeWidth: 0, fill: chartColor }}
-                  />
-                </AreaChart>
-              )}
-              
-              {chartType === "bar" && (
-                <BarChart
-                  data={volumeData}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
-                  <XAxis
-                    dataKey="time"
-                    tickFormatter={formatXAxis}
-                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
-                    axisLine={false}
-                    tickLine={false}
-                    minTickGap={30}
-                  />
-                  <YAxis
-                    tickFormatter={formatYAxis}
-                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={60}
-                    domain={[minPrice, maxPrice]}
-                    padding={{ top: 10, bottom: 10 }}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tick={{ fontSize: 10, fill: "#718096" }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={60}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend verticalAlign="top" height={36} />
-                  <Bar
-                    name="Price"
-                    dataKey="price"
-                    fill={chartColor}
-                    radius={[2, 2, 0, 0]}
-                  />
-                  <Bar
-                    name="Volume"
-                    dataKey="volume"
-                    fill="#718096"
-                    radius={[2, 2, 0, 0]}
-                    yAxisId="right"
-                    opacity={0.5}
-                  />
-                </BarChart>
-              )}
-              
-              {chartType === "ohlc" && (
-                <AreaChart
-                  data={ohlcData}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
-                  <XAxis
-                    dataKey="time"
-                    tickFormatter={formatXAxis}
-                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
-                    axisLine={false}
-                    tickLine={false}
-                    minTickGap={30}
-                  />
-                  <YAxis
-                    tickFormatter={formatYAxis}
-                    tick={{ fontSize: 12, fill: "#CBD5E0" }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={60}
-                    domain={['auto', 'auto']}
-                    padding={{ top: 10, bottom: 10 }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                </AreaChart>
-              )}
+              {(() => {
+                // FIX: Use an IIFE to return a single child element based on chartType
+                if (chartType === "area") {
+                  return (
+                    <AreaChart
+                      data={data}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
+                      <XAxis
+                        dataKey="time"
+                        tickFormatter={formatXAxis}
+                        tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                        axisLine={false}
+                        tickLine={false}
+                        minTickGap={30}
+                      />
+                      <YAxis
+                        tickFormatter={formatYAxis}
+                        tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={60}
+                        domain={[minPrice, maxPrice]}
+                        padding={{ top: 10, bottom: 10 }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      {data.length > 1 && (
+                        <ReferenceLine
+                          y={data[0].price}
+                          stroke="#718096"
+                          strokeDasharray="3 3"
+                        />
+                      )}
+                      <Area
+                        type="monotone"
+                        dataKey="price"
+                        stroke={chartColor}
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorPrice)"
+                        animationDuration={300}
+                        activeDot={{ r: 6, strokeWidth: 0, fill: chartColor }}
+                      />
+                    </AreaChart>
+                  );
+                } else if (chartType === "bar") {
+                  return (
+                    <BarChart
+                      data={volumeData}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
+                      <XAxis
+                        dataKey="time"
+                        tickFormatter={formatXAxis}
+                        tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                        axisLine={false}
+                        tickLine={false}
+                        minTickGap={30}
+                      />
+                      <YAxis
+                        tickFormatter={formatYAxis}
+                        tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={60}
+                        domain={[minPrice, maxPrice]}
+                        padding={{ top: 10, bottom: 10 }}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        tick={{ fontSize: 10, fill: "#718096" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={60}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend verticalAlign="top" height={36} />
+                      <Bar
+                        name="Price"
+                        dataKey="price"
+                        fill={chartColor}
+                        radius={[2, 2, 0, 0]}
+                      />
+                      <Bar
+                        name="Volume"
+                        dataKey="volume"
+                        fill="#718096"
+                        radius={[2, 2, 0, 0]}
+                        yAxisId="right"
+                        opacity={0.5}
+                      />
+                    </BarChart>
+                  );
+                } else {
+                  // OHLC chart
+                  return (
+                    <AreaChart
+                      data={ohlcData}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" strokeOpacity={0.3} />
+                      <XAxis
+                        dataKey="time"
+                        tickFormatter={formatXAxis}
+                        tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                        axisLine={false}
+                        tickLine={false}
+                        minTickGap={30}
+                      />
+                      <YAxis
+                        tickFormatter={formatYAxis}
+                        tick={{ fontSize: 12, fill: "#CBD5E0" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={60}
+                        domain={['auto', 'auto']}
+                        padding={{ top: 10, bottom: 10 }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                    </AreaChart>
+                  );
+                }
+              })()}
             </ResponsiveContainer>
           )}
         </div>

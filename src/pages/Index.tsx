@@ -17,6 +17,7 @@ import TradingDashboard from "@/components/TradingDashboard";
 import { marketDataService, CryptoPrice, CryptoStats } from "@/services/marketDataService";
 import { strategyService, StrategySignal } from "@/services/strategyService";
 import { tradingService } from "@/services/tradingService";
+import { toast } from "sonner";
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -41,17 +42,25 @@ const Index = () => {
 
   // Log interceptor
   useEffect(() => {
+    // Create initial logs
+    const initialLogs = [
+      `[${new Date().toLocaleTimeString()}] INFO    System initializing...`,
+      `[${new Date().toLocaleTimeString()}] INFO    Loading configuration from storage`,
+      `[${new Date().toLocaleTimeString()}] API     Connecting to market data providers`
+    ];
+    setLogs(initialLogs);
+    
     const originalConsoleLog = console.log;
     console.log = function(...args) {
       originalConsoleLog.apply(console, args);
       
       // Only capture log entries in our format
       const logString = args.join(' ');
-      if (logString.match(/^\[\d{2}:\d{2}:\d{2}\s[AP]M\]/)) {
+      if (logString.match(/^\[\d{1,2}:\d{2}:\d{2}/)) {
         setLogs(prev => {
           const newLogs = [...prev, logString];
-          if (newLogs.length > 100) {
-            return newLogs.slice(newLogs.length - 100);
+          if (newLogs.length > 200) {
+            return newLogs.slice(newLogs.length - 200);
           }
           return newLogs;
         });
@@ -94,6 +103,9 @@ const Index = () => {
         console.error("Error fetching initial data:", error);
         console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to initialize market data: ${error.message}`);
         setIsLoading(false);
+        
+        // Add fallback to generate market data for display purposes if real data fetch fails
+        createFallbackData();
       }
     };
 
@@ -117,6 +129,25 @@ const Index = () => {
     };
   }, []);
 
+  // Create fallback data if API calls fail
+  const createFallbackData = () => {
+    console.log(`[${new Date().toLocaleTimeString()}] WARNING API services unavailable, waiting for connectivity...`);
+    toast.error("Unable to fetch market data", {
+      description: "Check your internet connection or try again later."
+    });
+    
+    // Set minimal chart data to avoid errors
+    const emptyData: CryptoPrice[] = [];
+    for (let i = 0; i < 10; i++) {
+      emptyData.push({
+        price: 0,
+        time: "00:00",
+        date: new Date().toISOString()
+      });
+    }
+    setChartData(emptyData);
+  };
+
   // Fetch data periodically
   useEffect(() => {
     if (updateIntervalRef.current) {
@@ -128,6 +159,9 @@ const Index = () => {
         try {
           // Get new price data
           const newPrice = await marketDataService.getBitcoinPrice();
+          
+          // Add logging
+          console.log(`[${new Date().toLocaleTimeString()}] INFO    Current BTC price: $${newPrice.price.toLocaleString()}`);
           
           // Update chart data
           setChartData(prevData => {
@@ -153,8 +187,12 @@ const Index = () => {
           
           // Every few updates, also refresh Bitcoin stats
           if (Math.random() < 0.2) {
-            const stats = await marketDataService.getBitcoinStats();
-            setBtcStats(stats);
+            try {
+              const stats = await marketDataService.getBitcoinStats();
+              setBtcStats(stats);
+            } catch (error) {
+              console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to update BTC stats: ${error.message}`);
+            }
           }
           
           // Update trades/positions
@@ -180,7 +218,7 @@ const Index = () => {
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : 0;
 
   return (
-    <div className="min-h-screen flex flex-col dark:bg-dark-bg bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
       <main className="flex-1 p-4">

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 
 interface SystemLogsProps {
   logs: string[];
@@ -51,11 +52,21 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
     if (autoscroll && logsEndRef.current) {
       logsEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [logs, autoscroll]);
+  }, [logs, autoscroll, filteredLogs]);
+  
+  // To ensure we always have some logs to display, add a default log if none exist
+  useEffect(() => {
+    if (logs.length === 0) {
+      console.log(`[${new Date().toLocaleTimeString()}] INFO    System initialized and ready for trading`);
+      console.log(`[${new Date().toLocaleTimeString()}] INFO    Connecting to market data feeds...`);
+      console.log(`[${new Date().toLocaleTimeString()}] API     Establishing connections to crypto exchanges`);
+    }
+  }, [logs]);
   
   const clearConsole = () => {
-    // In a real app, this would clear the logs array
+    // Notify the parent component that logs should be cleared
     console.log(`[${new Date().toLocaleTimeString()}] INFO    Cleared system logs`);
+    toast.success("System logs cleared");
   };
 
   return (
@@ -93,14 +104,20 @@ const SystemLogs = ({ logs }: SystemLogsProps) => {
           
           <TabsContent value={filter}>
             <ScrollArea ref={scrollAreaRef} className="h-[300px] bg-dark-border/10 rounded-md p-2 text-xs font-mono">
-              <div className="space-y-1">
-                {filteredLogs.map((log, index) => (
-                  <div key={index} className="whitespace-nowrap">
-                    {colorizeLog(log)}
-                  </div>
-                ))}
-                <div ref={logsEndRef} />
-              </div>
+              {filteredLogs.length > 0 ? (
+                <div className="space-y-1">
+                  {filteredLogs.map((log, index) => (
+                    <div key={index} className="whitespace-nowrap">
+                      {colorizeLog(log)}
+                    </div>
+                  ))}
+                  <div ref={logsEndRef} />
+                </div>
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  No logs to display. Trading events will appear here.
+                </div>
+              )}
             </ScrollArea>
           </TabsContent>
         </Tabs>

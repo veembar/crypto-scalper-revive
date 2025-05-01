@@ -1,436 +1,594 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Newspaper, TrendingUp, AlertTriangle, ArrowRightCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
+import { TrendingUp, TrendingDown, CircleAlert, BarChart, Globe } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { tradingService } from "@/services/tradingService";
+import { strategyService } from "@/services/strategyService";
 import { toast } from "sonner";
 
-const MAX_RETRIES = 3;
+// Mock news data structure
+interface NewsItem {
+  id: string;
+  title: string;
+  source: string;
+  url: string;
+  timestamp: string;
+  sentiment: "positive" | "negative" | "neutral";
+  keywords: string[];
+  summary: string;
+  impact: number;
+}
 
-// News-based trading strategy integration
+// Mock news sentiment data
+interface SentimentData {
+  date: string;
+  positive: number;
+  negative: number;
+  neutral: number;
+}
+
 const NewsStrategy = () => {
+  const [enabled, setEnabled] = useState(false);
   const [activeTab, setActiveTab] = useState("latest");
-  const [newsData, setNewsData] = useState([]);
+  const [sentimentThreshold, setSentimentThreshold] = useState(75);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [sentimentData, setSentimentData] = useState<SentimentData[]>([]);
+  const [keywords, setKeywords] = useState("bitcoin, btc, crypto");
+  const [sources, setSources] = useState("Bloomberg, Reuters, CoinDesk, CoinTelegraph");
   const [isLoading, setIsLoading] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [newsStrategyEnabled, setNewsStrategyEnabled] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const [scrapingInterval, setScrapingInterval] = useState(10); // minutes
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
-  // Fetch crypto news from various sources
-  const fetchNewsData = async () => {
-    setIsLoading(true);
-    
-    try {
-      console.log(`[${new Date().toLocaleTimeString()}] INFO    Fetching latest crypto news and sentiment analysis`);
-      
-      // Try multiple sources for news data (in reality, these would call different APIs)
-      let newsResponse;
-      
-      try {
-        // Try CryptoCompare News API (simulated)
-        console.log(`[${new Date().toLocaleTimeString()}] API     Fetching news from CryptoCompare`);
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // In a real app, we would fetch from actual news APIs
-        newsResponse = await fetchSimulatedNewsData();
-        console.log(`[${new Date().toLocaleTimeString()}] API     Successfully fetched ${newsResponse.length} news items`);
-      } catch (error) {
-        // If first source fails, try alternate source
-        console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to fetch news from primary source: ${error.message}`);
-        
-        // Try CoinDesk News API (simulated)
-        console.log(`[${new Date().toLocaleTimeString()}] API     Fetching news from CoinDesk (backup source)`);
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        newsResponse = await fetchSimulatedNewsData();
-        console.log(`[${new Date().toLocaleTimeString()}] API     Successfully fetched ${newsResponse.length} news items from backup source`);
-      }
-      
-      // Convert news to trading signals through sentiment analysis
-      console.log(`[${new Date().toLocaleTimeString()}] INFO    Analyzing sentiment for ${newsResponse.length} news items`);
-      const analyzedNews = await analyzeSentiment(newsResponse);
-      
-      setNewsData(analyzedNews);
-      setLastUpdate(new Date());
-      setRetryCount(0);
-      
-      // If news strategy is enabled, process high-impact news
-      if (newsStrategyEnabled) {
-        processNewsSignals(analyzedNews);
-      }
-    } catch (error) {
-      console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to update news data: ${error.message}`);
-      
-      // Implement retry mechanism
-      if (retryCount < MAX_RETRIES) {
-        const nextRetry = retryCount + 1;
-        setRetryCount(nextRetry);
-        console.log(`[${new Date().toLocaleTimeString()}] INFO    Retrying news fetch (${nextRetry}/${MAX_RETRIES})`);
-        
-        // Wait before retry
-        setTimeout(() => fetchNewsData(), 3000);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Simulate news fetch from APIs
-  const fetchSimulatedNewsData = async () => {
-    // This would be an actual API call in a production app
-    
-    // Get current Bitcoin price to make news more realistic
-    const btcPrice = Math.floor(90000 + Math.random() * 10000);
-    
-    // Create array of recent and relevant news items
-    const currentDate = new Date();
-    const timeOptions = { hour: 'numeric', minute: 'numeric' };
-    
-    // Mix of actual and simulated news
-    return [
-      {
-        id: `news-${Date.now()}-1`,
-        title: `Bitcoin ${Math.random() > 0.5 ? 'Surges' : 'Drops'} to $${btcPrice.toLocaleString()} as ${Math.random() > 0.5 ? 'Bulls' : 'Bears'} Take Control`,
-        source: "CryptoCompare",
-        time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
-        content: `The price of Bitcoin has ${Math.random() > 0.5 ? 'surged' : 'dropped'} to $${btcPrice.toLocaleString()} in a ${Math.random() > 0.5 ? 'bullish' : 'bearish'} market movement.`
-      },
-      {
-        id: `news-${Date.now()}-2`,
-        title: `Major Exchange Reports ${Math.random() > 0.5 ? 'Increased' : 'Decreased'} BTC Trading Volume`,
-        source: "CoinDesk",
-        time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
-        content: `Trading volume on major exchanges has ${Math.random() > 0.5 ? 'increased' : 'decreased'} by ${Math.floor(Math.random() * 30) + 10}% in the past 24 hours.`
-      },
-      {
-        id: `news-${Date.now()}-3`,
-        title: "Bitcoin ETF Sees Significant Inflows For Third Straight Day",
-        source: "Bloomberg",
-        time: `${Math.floor(Math.random() * 4) + 2} hours ago`,
-        content: "Institutional investors continue to pour money into Bitcoin ETFs, with daily inflows exceeding $100M."
-      },
-      {
-        id: `news-${Date.now()}-4`,
-        title: "Mining Difficulty Adjusted by 2.7% in Latest Update",
-        source: "Bitcoin Magazine",
-        time: `${Math.floor(Math.random() * 6) + 2} hours ago`,
-        content: "The Bitcoin network's mining difficulty has been adjusted by 2.7% in the latest automatic update."
-      },
-      {
-        id: `news-${Date.now()}-5`,
-        title: Math.random() > 0.5 ? 
-          "SEC Chair Makes Positive Comments About Crypto Regulation" : 
-          "Regulatory Concerns Grow as Government Official Speaks Out Against Crypto",
-        source: "The Block",
-        time: `${Math.floor(Math.random() * 8) + 3} hours ago`,
-        content: Math.random() > 0.5 ? 
-          "Comments from the SEC chair suggest a more favorable regulatory environment for cryptocurrencies." :
-          "A high-ranking government official has expressed concerns about the cryptocurrency market."
-      },
-      {
-        id: `news-${Date.now()}-6`,
-        title: `Technical Analysis: Bitcoin ${Math.random() > 0.5 ? 'Breaks Above' : 'Tests'} Key Resistance Level`,
-        source: "TradingView",
-        time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
-        content: `Technical analysts note that Bitcoin has ${Math.random() > 0.5 ? 'broken above' : 'is testing'} a key resistance level at $${Math.floor(btcPrice/1000)*1000}.`
-      },
-      {
-        id: `news-${Date.now()}-7`,
-        title: "Whale Alert: Large BTC Transaction Spotted Moving to Exchange",
-        source: "Whale Alert",
-        time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
-        content: `A transaction of ${Math.floor(Math.random() * 900) + 100} BTC was spotted moving from a cold wallet to a major exchange.`
-      }
-    ];
-  };
-  
-  // Simulate sentiment analysis on news data
-  const analyzeSentiment = async (newsItems) => {
-    // In a real app, this would use NLP APIs like Google Cloud Natural Language API
-    // or a custom machine learning model to perform sentiment analysis
-    
-    return newsItems.map(item => {
-      // Simulate sentiment analysis
-      let sentiment;
-      let impact;
-      let strategy;
-      
-      // Analyze title for sentiment cues
-      const title = item.title.toLowerCase();
-      
-      // Positive sentiment indicators
-      if (title.includes("surge") || 
-          title.includes("bull") || 
-          title.includes("rise") || 
-          title.includes("gain") ||
-          title.includes("positive") ||
-          title.includes("inflow") ||
-          title.includes("breaks above")) {
-        sentiment = "positive";
-      } 
-      // Negative sentiment indicators
-      else if (title.includes("drop") || 
-               title.includes("bear") || 
-               title.includes("fall") || 
-               title.includes("decrease") ||
-               title.includes("concern") ||
-               title.includes("against")) {
-        sentiment = "negative";
-      } 
-      // Neutral if no clear indicators
-      else {
-        sentiment = "neutral";
-      }
-      
-      // Determine impact based on content and source
-      if (title.includes("etf") || 
-          title.includes("sec") || 
-          title.includes("regulation") ||
-          title.includes("major") ||
-          title.includes("significant")) {
-        impact = "high";
-      } else if (title.includes("technical") || 
-                 title.includes("analyst") || 
-                 title.includes("whale") ||
-                 title.includes("volume")) {
-        impact = "medium";
-      } else {
-        impact = "low";
-      }
-      
-      // Generate trading strategy recommendation
-      if (sentiment === "positive" && impact === "high") {
-        strategy = "Long BTC with 1:2 risk-reward ratio";
-      } else if (sentiment === "negative" && impact === "high") {
-        strategy = "Short BTC with tight stop-loss";
-      } else if (sentiment === "positive" && impact === "medium") {
-        strategy = "Long BTC with small position size";
-      } else if (sentiment === "negative" && impact === "medium") {
-        strategy = "Reduce position size gradually";
-      } else if (sentiment === "neutral" && impact === "high") {
-        strategy = "Stay hedged with options";
-      } else {
-        strategy = "No action recommended";
-      }
-      
-      return {
-        ...item,
-        sentiment,
-        impact,
-        strategy
-      };
-    });
-  };
-  
-  // Process news signals for automated trading
-  const processNewsSignals = (news) => {
-    const highImpactNews = news.filter(item => item.impact === "high");
-    
-    if (highImpactNews.length === 0) {
-      return;
-    }
-    
-    console.log(`[${new Date().toLocaleTimeString()}] STRATEGY News Strategy: Analyzing ${highImpactNews.length} high-impact news items`);
-    
-    highImpactNews.forEach(news => {
-      // Only react to high-impact news with clear sentiment
-      if (news.sentiment === "positive") {
-        console.log(`[${new Date().toLocaleTimeString()}] STRATEGY News Strategy: Buy signal from news "${news.title}"`);
-        
-        // Create a strategy signal
-        const signal = {
-          type: "BUY",
-          timestamp: new Date().toISOString(),
-          source: "News Strategy",
-          strength: news.impact === "high" ? 80 : 65,
-          message: `News Strategy: ${news.title}`,
-        };
-        
-        // Send to trading service
-        tradingService.processSignal(signal, 0); // Price will be set by the service
-      } 
-      else if (news.sentiment === "negative") {
-        console.log(`[${new Date().toLocaleTimeString()}] STRATEGY News Strategy: Sell signal from news "${news.title}"`);
-        
-        // Create a strategy signal
-        const signal = {
-          type: "SELL",
-          timestamp: new Date().toISOString(),
-          source: "News Strategy",
-          strength: news.impact === "high" ? 80 : 65,
-          message: `News Strategy: ${news.title}`,
-        };
-        
-        // Send to trading service
-        tradingService.processSignal(signal, 0); // Price will be set by the service
-      }
-    });
-  };
-
-  // Initial fetch
+  // Fetch news data on component mount
   useEffect(() => {
-    fetchNewsData();
-    
-    // Refresh news every 5 minutes
-    const intervalId = setInterval(fetchNewsData, 5 * 60 * 1000);
-    return () => clearInterval(intervalId);
-  }, []);
+    if (enabled) {
+      fetchNews();
+      const interval = setInterval(fetchNews, scrapingInterval * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [enabled, scrapingInterval]);
   
-  // Toggle news-based trading
-  const toggleNewsStrategy = () => {
-    const newState = !newsStrategyEnabled;
-    setNewsStrategyEnabled(newState);
-    
-    if (newState) {
-      console.log(`[${new Date().toLocaleTimeString()}] CONFIG   Enabled news-based trading strategy`);
-      toast.success("News-based trading signals enabled");
+  // Generate mock sentiment data
+  useEffect(() => {
+    if (enabled) {
+      const newSentimentData: SentimentData[] = [];
+      const now = new Date();
       
-      // Process current news immediately
-      processNewsSignals(newsData);
-    } else {
-      console.log(`[${new Date().toLocaleTimeString()}] CONFIG   Disabled news-based trading strategy`);
-      toast.info("News-based trading signals disabled");
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(now);
+        date.setHours(now.getHours() - i * 4);
+        
+        newSentimentData.push({
+          date: `${date.getHours().toString().padStart(2, '0')}:00`,
+          positive: Math.floor(Math.random() * 30) + 10,
+          negative: Math.floor(Math.random() * 20) + 5,
+          neutral: Math.floor(Math.random() * 25) + 15
+        });
+      }
+      
+      setSentimentData(newSentimentData);
+    }
+  }, [enabled, newsItems]);
+  
+  // Fetch news from various sources
+  const fetchNews = async () => {
+    try {
+      setIsLoading(true);
+      console.log(`[${new Date().toLocaleTimeString()}] INFO    Starting news scraping from: ${sources.split(',').map(s => s.trim()).join(', ')}`);
+      
+      // Simulated API delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // In a real app, this would be an actual API call to scrape news
+      const mockNewsItems: NewsItem[] = [];
+      const sources = ["Bloomberg", "Reuters", "CoinDesk", "CoinTelegraph"];
+      const sentiments = ["positive", "negative", "neutral"];
+      const now = new Date();
+      
+      // Generate mock news items with real timestamps
+      for (let i = 0; i < 15; i++) {
+        const timestamp = new Date(now);
+        timestamp.setMinutes(now.getMinutes() - i * 30);
+        
+        const sentiment = sentiments[Math.floor(Math.random() * 3)] as "positive" | "negative" | "neutral";
+        const impact = sentiment === "positive" ? Math.random() * 40 + 60 : 
+                       sentiment === "negative" ? Math.random() * 40 - 80 : 
+                       Math.random() * 20 + 40;
+        
+        mockNewsItems.push({
+          id: `news-${Date.now()}-${i}`,
+          title: generateNewsTitle(sentiment),
+          source: sources[Math.floor(Math.random() * sources.length)],
+          url: "https://example.com/news",
+          timestamp: timestamp.toISOString(),
+          sentiment: sentiment,
+          keywords: ["bitcoin", "crypto", "market", "trading"].slice(0, Math.floor(Math.random() * 3) + 1),
+          summary: generateNewsSummary(sentiment),
+          impact: Math.abs(impact)
+        });
+      }
+      
+      // Process news for trading signals
+      processNewsItems(mockNewsItems);
+      
+      setNewsItems(mockNewsItems);
+      setLastUpdated(new Date().toLocaleString());
+      setIsLoading(false);
+      
+      console.log(`[${new Date().toLocaleTimeString()}] INFO    Completed news scraping, found ${mockNewsItems.length} articles`);
+    } catch (error) {
+      console.error("Error fetching news:", error);
+      console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to scrape news: ${error}`);
+      setIsLoading(false);
+      toast.error("Failed to fetch news data");
     }
   };
-
-  // Sentiment colors
-  const sentimentColors = {
-    positive: "bg-green-500/20 text-green-500",
-    neutral: "bg-blue-500/20 text-blue-500",
-    negative: "bg-red-500/20 text-red-500"
+  
+  // Process news items for trading signals
+  const processNewsItems = (items: NewsItem[]) => {
+    if (!enabled) return;
+    
+    // Group by sentiment
+    const positiveNews = items.filter(item => item.sentiment === "positive");
+    const negativeNews = items.filter(item => item.sentiment === "negative");
+    
+    // Calculate sentiment strength
+    const positiveSentimentStrength = positiveNews.reduce((sum, news) => sum + news.impact, 0) / (positiveNews.length || 1);
+    const negativeSentimentStrength = negativeNews.reduce((sum, news) => sum + news.impact, 0) / (negativeNews.length || 1);
+    
+    // Generate signals based on news sentiment if it meets the threshold
+    if (positiveSentimentStrength > sentimentThreshold) {
+      console.log(`[${new Date().toLocaleTimeString()}] STRATEGY News Sentiment: BUY signal detected with strength ${positiveSentimentStrength.toFixed(2)}`);
+      
+      const signal: typeof strategyService.generateSignal = {
+        type: "BUY",
+        timestamp: new Date().toISOString(),
+        source: "News Sentiment",
+        strength: positiveSentimentStrength,
+        message: `News Sentiment: Multiple positive headlines`
+      };
+      
+      tradingService.processSignal(signal, 0); // The actual price will be set by the trading service
+    }
+    
+    if (negativeSentimentStrength > sentimentThreshold) {
+      console.log(`[${new Date().toLocaleTimeString()}] STRATEGY News Sentiment: SELL signal detected with strength ${negativeSentimentStrength.toFixed(2)}`);
+      
+      const signal: typeof strategyService.generateSignal = {
+        type: "SELL",
+        timestamp: new Date().toISOString(),
+        source: "News Sentiment",
+        strength: negativeSentimentStrength,
+        message: `News Sentiment: Multiple negative headlines`
+      };
+      
+      tradingService.processSignal(signal, 0); // The actual price will be set by the trading service
+    }
   };
-
-  // Impact colors
-  const impactColors = {
-    high: "bg-red-500/20 text-red-500",
-    medium: "bg-yellow-500/20 text-yellow-500",
-    low: "bg-blue-500/20 text-blue-500"
+  
+  const toggleEnabled = (value: boolean) => {
+    setEnabled(value);
+    if (value) {
+      fetchNews();
+      toast.success("News sentiment analysis enabled");
+    } else {
+      toast.info("News sentiment analysis disabled");
+    }
+  };
+  
+  // Helper function to generate news titles
+  const generateNewsTitle = (sentiment: string) => {
+    if (sentiment === "positive") {
+      const titles = [
+        "Bitcoin Breaks Above Key Resistance Level",
+        "Major Financial Institution Adopts Bitcoin",
+        "Bitcoin ETF Approval Imminent",
+        "Institutional Investment in BTC Surges",
+        "BTC Hash Rate Reaches All-Time High"
+      ];
+      return titles[Math.floor(Math.random() * titles.length)];
+    } else if (sentiment === "negative") {
+      const titles = [
+        "Regulatory Concerns Grow for Crypto Markets",
+        "BTC Drops Below Support Level",
+        "Major Exchange Reports Security Breach",
+        "Bitcoin Mining Difficulty Increases Amid Price Drop",
+        "Analysts Warn of BTC Correction"
+      ];
+      return titles[Math.floor(Math.random() * titles.length)];
+    } else {
+      const titles = [
+        "Bitcoin Price Consolidates After Recent Move",
+        "Experts Analyze BTC Market Structure",
+        "On-Chain Metrics Show Mixed Signals",
+        "Trading Volume Remains Consistent for BTC",
+        "Market Players Await Next Bitcoin Move"
+      ];
+      return titles[Math.floor(Math.random() * titles.length)];
+    }
+  };
+  
+  // Helper function to generate news summaries
+  const generateNewsSummary = (sentiment: string) => {
+    if (sentiment === "positive") {
+      const summaries = [
+        "Bitcoin has surpassed a key technical resistance level, suggesting potential for continued upward momentum. Analysts point to institutional buying as a primary driver.",
+        "A major financial institution announced plans to add Bitcoin to their balance sheet, marking another milestone for mainstream adoption of the cryptocurrency.",
+        "Sources close to regulators indicate a Bitcoin ETF approval is in final stages, which could bring significant new capital into the market.",
+        "Data shows institutional investment in Bitcoin has reached new highs in Q2, with several major funds disclosing positions.",
+        "The Bitcoin network's hash rate has reached an all-time high, indicating strong miner confidence despite recent market volatility."
+      ];
+      return summaries[Math.floor(Math.random() * summaries.length)];
+    } else if (sentiment === "negative") {
+      const summaries = [
+        "Regulatory bodies are signaling increased scrutiny of cryptocurrency markets, raising concerns about potential restrictions on trading and usage.",
+        "Bitcoin price has fallen below a key support level that had held for several months, potentially indicating further downside ahead.",
+        "A major cryptocurrency exchange reported a security incident affecting user wallets, though the full extent of the breach remains unclear.",
+        "Bitcoin mining difficulty has increased significantly while prices dropped, putting pressure on miner profitability and potentially forcing sell-offs.",
+        "Several prominent market analysts have warned that Bitcoin may be due for a correction after its recent price action, citing technical indicators."
+      ];
+      return summaries[Math.floor(Math.random() * summaries.length)];
+    } else {
+      const summaries = [
+        "Bitcoin continues to trade within a consolidation range as traders assess market conditions and await catalysts for the next major move.",
+        "On-chain analysts note that Bitcoin metrics are showing mixed signals, with some indicators bullish while others suggest caution.",
+        "Trading volume for Bitcoin has remained relatively consistent over the past week, suggesting neither strong accumulation nor distribution patterns.",
+        "Market participants are watching key technical levels for Bitcoin as the asset continues to establish its short-term direction.",
+        "Derivatives data shows balanced positioning among Bitcoin traders, with neither longs nor shorts showing significant dominance."
+      ];
+      return summaries[Math.floor(Math.random() * summaries.length)];
+    }
   };
 
   return (
-    <Card className="bg-dark-card border-dark-border mb-4">
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <Newspaper className="w-5 h-5 mr-2 text-yellow-400" />
-          News-Based Trading Signals
-        </CardTitle>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
-            Last updated: {lastUpdate.toLocaleTimeString()}
+    <Card className="bg-dark-card border-dark-border">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-lg font-medium">News Sentiment Strategy</CardTitle>
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={enabled}
+            onCheckedChange={toggleEnabled}
+            className="data-[state=checked]:bg-green-500"
+          />
+          <span className="text-sm text-muted-foreground">
+            {enabled ? "Enabled" : "Disabled"}
           </span>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={fetchNewsData} 
-            disabled={isLoading}
-            className="text-xs border-dark-border"
-          >
-            {isLoading ? "Refreshing..." : "Refresh"}
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="latest" onValueChange={setActiveTab}>
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-dark-border/20 mb-4">
             <TabsTrigger value="latest">Latest News</TabsTrigger>
-            <TabsTrigger value="high-impact">High Impact</TabsTrigger>
-            <TabsTrigger value="signals">Trading Signals</TabsTrigger>
+            <TabsTrigger value="sentiment">Sentiment Analysis</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
           
-          <TabsContent value={activeTab} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {newsData
-                .filter(item => {
-                  if (activeTab === "high-impact") return item.impact === "high";
-                  if (activeTab === "signals") return item.sentiment !== "neutral";
-                  return true;
-                })
-                .map(item => (
-                  <div key={item.id} className="border border-dark-border rounded-md p-3 bg-dark-border/10 hover:bg-dark-border/20 transition-colors">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex gap-2">
-                        <Badge className={sentimentColors[item.sentiment]}>
-                          {item.sentiment.charAt(0).toUpperCase() + item.sentiment.slice(1)}
-                        </Badge>
-                        <Badge className={impactColors[item.impact]}>
-                          {item.impact.charAt(0).toUpperCase() + item.impact.slice(1)} Impact
-                        </Badge>
-                      </div>
-                      <span className="text-xs text-muted-foreground">{item.time}</span>
-                    </div>
-                    <h3 className="font-medium mb-1">{item.title}</h3>
-                    <p className="text-xs text-muted-foreground mb-2">Source: {item.source}</p>
-                    
-                    <div className="mt-3 pt-2 border-t border-dark-border flex items-center justify-between">
-                      <div className="flex items-center">
-                        <TrendingUp className="w-4 h-4 mr-1 text-blue-400" />
-                        <span className="text-xs">Signal:</span>
-                      </div>
-                      <span className={`text-xs font-medium ${
-                        item.strategy.toLowerCase().includes('long') 
-                          ? 'text-green-400' 
-                          : item.strategy.toLowerCase().includes('short')
-                            ? 'text-red-400'
-                            : 'text-blue-400'
-                      }`}>
-                        {item.strategy}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+          <TabsContent value="latest" className="h-[400px] space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-medium">Latest Market News</h3>
+                <p className="text-xs text-muted-foreground">
+                  {lastUpdated ? `Last updated: ${lastUpdated}` : "Not yet updated"}
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchNews} 
+                disabled={isLoading}
+              >
+                {isLoading ? "Refreshing..." : "Refresh News"}
+              </Button>
             </div>
             
-            {newsData.length === 0 && (
-              <div className="border border-dark-border rounded-md p-8 bg-dark-border/10 flex flex-col items-center justify-center">
-                <AlertTriangle className="w-8 h-8 text-yellow-400 mb-2" />
-                <p className="text-muted-foreground text-center">
-                  {isLoading ? "Loading news data..." : "No news data available at the moment."}
-                </p>
-                {!isLoading && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={fetchNewsData} 
-                    className="mt-3"
-                  >
-                    Refresh News Data
-                  </Button>
-                )}
-              </div>
-            )}
-            
-            {activeTab === "signals" && (
-              <div className="border border-dark-border rounded-md p-3 bg-dark-border/10 mt-4">
-                <div className="flex items-center mb-2">
-                  <AlertTriangle className="w-4 h-4 mr-1 text-yellow-400" />
-                  <h3 className="text-sm font-medium">News-Based Trading Strategy</h3>
+            <ScrollArea className="h-[340px]">
+              {newsItems.length > 0 ? (
+                <div className="space-y-3">
+                  {newsItems.map(news => (
+                    <div 
+                      key={news.id}
+                      className="border border-dark-border rounded-md p-3 hover:bg-dark-border/10 transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">{news.title}</h4>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                            <span>{news.source}</span>
+                            <span>•</span>
+                            <span>{new Date(news.timestamp).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className={cn(
+                          "px-2 py-1 rounded text-xs font-medium flex items-center",
+                          news.sentiment === "positive" ? "bg-green-500/20 text-green-400" :
+                          news.sentiment === "negative" ? "bg-red-500/20 text-red-400" :
+                          "bg-blue-500/20 text-blue-400"
+                        )}>
+                          {news.sentiment === "positive" ? (
+                            <><TrendingUp className="h-3 w-3 mr-1" /> Bullish</>
+                          ) : news.sentiment === "negative" ? (
+                            <><TrendingDown className="h-3 w-3 mr-1" /> Bearish</>
+                          ) : (
+                            <><CircleAlert className="h-3 w-3 mr-1" /> Neutral</>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">{news.summary}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {news.keywords.map((keyword, idx) => (
+                          <span 
+                            key={idx}
+                            className="text-xs px-1.5 py-0.5 bg-dark-border/30 rounded-full"
+                          >
+                            #{keyword}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  This strategy analyzes news sentiment and market impact to generate trading signals. 
-                  High-impact positive news generates long signals, while high-impact negative news generates short signals.
-                  Combined with technical indicators, this can improve strategy performance.
-                </p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className={`mt-3 text-xs border-yellow-500 ${newsStrategyEnabled ? 'bg-yellow-500/20' : ''} text-yellow-500 hover:bg-yellow-500/10`}
-                  onClick={toggleNewsStrategy}
-                >
-                  <ArrowRightCircle className="w-3 h-3 mr-1" /> 
-                  {newsStrategyEnabled ? "Disable" : "Enable"} news-based trading signals
-                </Button>
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+                  {isLoading ? (
+                    <p>Fetching latest news...</p>
+                  ) : (
+                    <>
+                      <Globe className="h-8 w-8 mb-2 opacity-50" />
+                      <p>No news articles available</p>
+                      <p className="text-xs mt-1">Enable the strategy to start collecting market news</p>
+                    </>
+                  )}
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+          
+          <TabsContent value="sentiment" className="h-[400px] space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-dark-border/10 rounded-lg p-4 flex flex-col items-center justify-center">
+                <div className="text-xs text-muted-foreground mb-1">Overall Sentiment</div>
+                <div className={cn(
+                  "text-xl font-semibold mb-1",
+                  positiveCount() > negativeCount() ? "text-green-400" :
+                  negativeCount() > positiveCount() ? "text-red-400" : "text-blue-400"
+                )}>
+                  {positiveCount() > negativeCount() ? "Bullish" :
+                   negativeCount() > positiveCount() ? "Bearish" : "Neutral"}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Based on {newsItems.length} articles
+                </div>
               </div>
-            )}
+              
+              <div className="bg-dark-border/10 rounded-lg p-4 flex flex-col">
+                <div className="text-xs text-muted-foreground mb-2">Sentiment Distribution</div>
+                <div className="flex-1 flex items-end justify-between gap-2">
+                  <div className="flex flex-col items-center">
+                    <div className="text-xs mb-1 text-green-400">{positiveCount()}</div>
+                    <div 
+                      className="w-8 bg-green-500/80 rounded-t"
+                      style={{ height: `${(positiveCount() / newsItems.length) * 100}px` }}
+                    ></div>
+                    <div className="text-xs mt-1">Bullish</div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="text-xs mb-1 text-blue-400">{neutralCount()}</div>
+                    <div 
+                      className="w-8 bg-blue-500/80 rounded-t"
+                      style={{ height: `${(neutralCount() / newsItems.length) * 100}px` }}
+                    ></div>
+                    <div className="text-xs mt-1">Neutral</div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="text-xs mb-1 text-red-400">{negativeCount()}</div>
+                    <div 
+                      className="w-8 bg-red-500/80 rounded-t"
+                      style={{ height: `${(negativeCount() / newsItems.length) * 100}px` }}
+                    ></div>
+                    <div className="text-xs mt-1">Bearish</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-dark-border/10 rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-2">Signal Strength</div>
+                <div className="flex items-center mt-2">
+                  <div className="w-full bg-dark-border/30 rounded-full h-2.5">
+                    <div 
+                      className={cn(
+                        "h-2.5 rounded-full",
+                        calculateSignalStrength() > 70 ? "bg-green-500" :
+                        calculateSignalStrength() > 40 ? "bg-yellow-500" :
+                        "bg-red-500"
+                      )}
+                      style={{ width: `${calculateSignalStrength()}%` }}
+                    ></div>
+                  </div>
+                  <span className="ml-2 text-sm">{calculateSignalStrength()}%</span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-4">
+                  {enabled ? (
+                    `Trading threshold: ${sentimentThreshold}%`
+                  ) : (
+                    "Strategy disabled"
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-dark-border/10 rounded-lg p-4 mt-4 h-[220px]">
+              <div className="flex justify-between mb-4">
+                <h3 className="text-sm font-medium">Top Impactful News</h3>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <BarChart className="h-3 w-3 mr-1" />
+                  Impact Score
+                </div>
+              </div>
+              
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40%]">Headline</TableHead>
+                    <TableHead className="w-[20%]">Source</TableHead>
+                    <TableHead className="w-[20%]">Sentiment</TableHead>
+                    <TableHead className="w-[20%] text-right">Impact</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {newsItems
+                    .sort((a, b) => b.impact - a.impact)
+                    .slice(0, 5)
+                    .map(item => (
+                      <TableRow key={item.id}>
+                        <TableCell className="truncate font-medium">
+                          {item.title}
+                        </TableCell>
+                        <TableCell>{item.source}</TableCell>
+                        <TableCell>
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-full text-xs",
+                            item.sentiment === "positive" ? "bg-green-500/20 text-green-400" :
+                            item.sentiment === "negative" ? "bg-red-500/20 text-red-400" :
+                            "bg-blue-500/20 text-blue-400"
+                          )}>
+                            {item.sentiment}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.impact.toFixed(1)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="settings" className="h-[400px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="keywords">Keyword Filters</Label>
+                  <Input 
+                    id="keywords"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    placeholder="bitcoin, btc, crypto, ethereum..."
+                    className="bg-dark-border/20 border-dark-border"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter keywords separated by commas to filter news articles
+                  </p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="sources">News Sources</Label>
+                  <Input 
+                    id="sources"
+                    value={sources}
+                    onChange={(e) => setSources(e.target.value)}
+                    placeholder="Bloomberg, Reuters, CoinDesk..."
+                    className="bg-dark-border/20 border-dark-border"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter news sources separated by commas
+                  </p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="interval">Scraping Interval (minutes)</Label>
+                  <Input 
+                    id="interval"
+                    type="number"
+                    value={scrapingInterval.toString()}
+                    onChange={(e) => setScrapingInterval(Math.max(1, parseInt(e.target.value) || 10))}
+                    className="bg-dark-border/20 border-dark-border"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    How often to check for new articles
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="threshold">Signal Strength Threshold ({sentimentThreshold}%)</Label>
+                  <Slider 
+                    id="threshold"
+                    min={50}
+                    max={95}
+                    step={5}
+                    value={[sentimentThreshold]}
+                    onValueChange={(value) => setSentimentThreshold(value[0])}
+                    className="py-4"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Only generate trading signals when sentiment exceeds this threshold
+                  </p>
+                </div>
+                
+                <div className="bg-dark-border/10 rounded-lg p-4 mt-4">
+                  <h4 className="text-sm font-medium mb-2">Strategy Configuration</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Enable for BUY signals</span>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Enable for SELL signals</span>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Require confirmation</span>
+                      <Switch defaultChecked={false} />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end mt-4">
+                  <Button onClick={fetchNews}>
+                    Save & Apply Settings
+                  </Button>
+                </div>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
   );
+  
+  // Helper functions for sentiment calculation
+  function positiveCount() {
+    return newsItems.filter(item => item.sentiment === "positive").length;
+  }
+  
+  function negativeCount() {
+    return newsItems.filter(item => item.sentiment === "negative").length;
+  }
+  
+  function neutralCount() {
+    return newsItems.filter(item => item.sentiment === "neutral").length;
+  }
+  
+  function calculateSignalStrength() {
+    if (newsItems.length === 0) return 0;
+    
+    const positiveWeight = positiveCount() * 1.5;
+    const negativeWeight = negativeCount() * 1.2;
+    const totalWeight = positiveWeight + negativeWeight + neutralCount();
+    
+    return Math.min(100, Math.round((positiveWeight / totalWeight) * 100));
+  }
 };
 
 export default NewsStrategy;

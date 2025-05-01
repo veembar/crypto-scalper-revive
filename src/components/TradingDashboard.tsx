@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Wallet, TrendingUp, TrendingDown, CircleDollarSign, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,10 +10,10 @@ interface TradingDashboardProps {
 }
 
 const TradingDashboard = ({ stats }: TradingDashboardProps) => {
-  // Moving from useMemo to regular variables to avoid React hooks issues
-  const profitColor = stats.profitToday >= 0 ? "text-green-400" : "text-red-400";
-  const profitIcon = stats.profitToday >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />;
-  const totalProfitColor = stats.totalProfit >= 0 ? "text-green-400" : "text-red-400";
+  // Moving from useMemo to useState to avoid React hooks issues
+  const [profitColor] = useState(stats.profitToday >= 0 ? "text-green-400" : "text-red-400");
+  const [profitIcon] = useState(stats.profitToday >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />);
+  const [totalProfitColor] = useState(stats.totalProfit >= 0 ? "text-green-400" : "text-red-400");
   
   const winRatePercentage = stats.winRate * 100;
   let winRateColor = "text-red-400";
@@ -24,7 +24,7 @@ const TradingDashboard = ({ stats }: TradingDashboardProps) => {
   }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-4">
       <Card className="bg-dark-card border-dark-border overflow-hidden">
         <CardContent className="p-0">
           <div className="flex items-center p-4">

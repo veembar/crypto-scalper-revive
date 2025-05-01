@@ -1,6 +1,5 @@
-
 import { toast } from "sonner";
-import { StrategySignal } from "./strategyService";
+import { StrategySignal } from "./strategyTypes";
 
 // Position types
 export interface Position {

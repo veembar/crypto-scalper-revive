@@ -1,5 +1,5 @@
 
-// In this file, we're only going to modify the import for strategyService
+// In this file, we're going to modify the layout to better use the space
 import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
 import PriceCard from "@/components/PriceCard";
@@ -38,9 +38,12 @@ const Index = () => {
     changeFromATH: "0%"
   });
   const [logs, setLogs] = useState<string[]>([]);
+  const [dataSourceErrors, setDataSourceErrors] = useState<string[]>([]);
   
   const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tradingStarted = useRef<boolean>(strategyService.isRunning());
+  const retryAttemptsRef = useRef<number>(0);
+  const maxRetryAttempts = 5;
 
   // Log interceptor
   useEffect(() => {
@@ -93,6 +96,7 @@ const Index = () => {
         console.log(`[${new Date().toLocaleTimeString()}] INFO    Loaded initial price history (${initialPriceData.length} data points)`);
         
         setIsLoading(false);
+        retryAttemptsRef.current = 0;
         
         // Restore trading state from localstorage if it was running
         const wasTradingActive = localStorage.getItem('tradingActive') === 'true';
@@ -106,8 +110,21 @@ const Index = () => {
         console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to initialize market data: ${error.message}`);
         setIsLoading(false);
         
-        // Add fallback to generate market data for display purposes if real data fetch fails
-        createFallbackData();
+        // Instead of creating fallback data, we'll retry with exponential backoff
+        if (retryAttemptsRef.current < maxRetryAttempts) {
+          retryAttemptsRef.current++;
+          const delay = Math.min(1000 * Math.pow(2, retryAttemptsRef.current), 30000);
+          console.log(`[${new Date().toLocaleTimeString()}] INFO    Retrying data fetch in ${delay/1000} seconds (attempt ${retryAttemptsRef.current}/${maxRetryAttempts})...`);
+          
+          setTimeout(() => {
+            fetchData();
+          }, delay);
+        } else {
+          console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to fetch market data after ${maxRetryAttempts} attempts`);
+          toast.error("Failed to fetch market data", {
+            description: "Check your connection or try again later."
+          });
+        }
       }
     };
 
@@ -130,25 +147,6 @@ const Index = () => {
       }
     };
   }, []);
-
-  // Create fallback data if API calls fail
-  const createFallbackData = () => {
-    console.log(`[${new Date().toLocaleTimeString()}] WARNING API services unavailable, waiting for connectivity...`);
-    toast.error("Unable to fetch market data", {
-      description: "Check your internet connection or try again later."
-    });
-    
-    // Set minimal chart data to avoid errors
-    const emptyData: CryptoPrice[] = [];
-    for (let i = 0; i < 10; i++) {
-      emptyData.push({
-        price: 0,
-        time: "00:00",
-        date: new Date().toISOString()
-      });
-    }
-    setChartData(emptyData);
-  };
 
   // Fetch data periodically
   useEffect(() => {
@@ -194,15 +192,22 @@ const Index = () => {
               setBtcStats(stats);
             } catch (error) {
               console.log(`[${new Date().toLocaleTimeString()}] ERROR   Failed to update BTC stats: ${error.message}`);
+              setDataSourceErrors(prev => [...prev, `Failed to update BTC stats: ${error.message}`]);
             }
           }
           
           // Update trades/positions
           tradingService.updatePositions(newPrice.price);
           setTrades(tradingService.getPositions());
+          
+          // Clear any previous errors since we've successfully fetched data
+          if (dataSourceErrors.length > 0) {
+            setDataSourceErrors([]);
+          }
         } catch (error) {
           console.error("Error updating data:", error);
           console.log(`[${new Date().toLocaleTimeString()}] ERROR   Data update failed: ${error.message}`);
+          setDataSourceErrors(prev => [...prev, `Data update failed: ${error.message}`]);
         }
       }
     }, 5000); // Update every 5 seconds
@@ -223,13 +228,13 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
-      <main className="flex-1 p-4">
+      <main className="flex-1 p-2 md:p-4 overflow-x-hidden">
         <TradingDashboard stats={tradingService.getStats()} />
         
-        {/* Main layout grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Main layout grid - Improved to use space better */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 md:gap-4">
           {/* Price Cards */}
-          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4 mb-4">
             <PriceCard
               title="Bitcoin (BTC)"
               price={btcStats.currentPrice}
@@ -240,12 +245,12 @@ const Index = () => {
           </div>
           
           {/* API Settings */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-4">
             <ApiKeySettings />
           </div>
 
-          {/* Chart and Signals */}
-          <div className="lg:col-span-2">
+          {/* Chart and Market Stats */}
+          <div className="lg:col-span-9">
             <CryptoChart 
               data={chartData}
               title="BTC/USD Price Chart"
@@ -253,42 +258,40 @@ const Index = () => {
             />
           </div>
           
-          <div className="lg:col-span-1">
-            <SignalsDisplay signals={signals} />
-          </div>
-          
-          {/* News Strategy Section */}
           <div className="lg:col-span-3">
-            <NewsStrategy />
+            <div className="grid grid-cols-1 gap-4">
+              <MarketStats stats={btcStats} />
+              <SignalsDisplay signals={signals} />
+            </div>
           </div>
           
-          {/* Stats and Strategy Manager */}
-          <div className="lg:col-span-1">
-            <MarketStats stats={btcStats} />
-          </div>
-          
-          <div className="lg:col-span-2">
+          {/* Trading Strategy Sections */}
+          <div className="lg:col-span-12">
             <StrategyManager />
           </div>
           
-          {/* System Logs */}
-          <div className="lg:col-span-3 mt-4">
-            <SystemLogs logs={logs} />
+          <div className="lg:col-span-12">
+            <NewsStrategy />
           </div>
           
           {/* Positions Manager */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-12">
             <PositionsManager currentPrice={currentPrice} />
           </div>
           
+          {/* System Logs */}
+          <div className="lg:col-span-12">
+            <SystemLogs logs={logs} />
+          </div>
+          
           {/* Trade History */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-12">
             <TradeHistory trades={trades} />
           </div>
         </div>
       </main>
       
-      <footer className="p-4 text-center text-sm text-muted-foreground border-t border-dark-border">
+      <footer className="p-2 md:p-4 text-center text-sm text-muted-foreground border-t border-dark-border">
         <p>BTC Scalper Pro - {new Date().getFullYear()} - Using real-time market data</p>
       </footer>
     </div>

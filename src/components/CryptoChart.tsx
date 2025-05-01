@@ -61,26 +61,23 @@ const CryptoChart = ({ data, title, isLoading = false }: CryptoChartProps) => {
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const displayData = chartType === "ohlc" ? (
-        <>
-          <p className="text-xs text-muted-foreground">Open: ${Number(payload[0].payload.open).toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground">Close: ${Number(payload[0].payload.close).toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground">High: ${Number(payload[0].payload.high).toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground">Low: ${Number(payload[0].payload.low).toLocaleString()}</p>
-        </>
-      ) : (
-        <p className="text-sm font-medium text-white">
-          ${Number(payload[0].value).toLocaleString()}
-        </p>
-      );
-        
       return (
         <div className="bg-dark-card p-3 border border-dark-border rounded-md shadow-lg">
           <p className="text-xs text-muted-foreground">{label}</p>
-          {displayData}
+          <p className="text-sm font-medium text-white">
+            ${Number(payload[0].value).toLocaleString()}
+          </p>
           <p className="text-xs text-muted-foreground">
             {new Date(payload[0].payload.date).toLocaleString()}
           </p>
+          {chartType === "ohlc" && (
+            <>
+              <p className="text-xs text-muted-foreground">Open: ${Number(payload[0].payload.open).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Close: ${Number(payload[0].payload.close).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">High: ${Number(payload[0].payload.high).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Low: ${Number(payload[0].payload.low).toLocaleString()}</p>
+            </>
+          )}
         </div>
       );
     }
@@ -128,37 +125,6 @@ const CryptoChart = ({ data, title, isLoading = false }: CryptoChartProps) => {
     ...d,
     volume: d.price * (0.5 + Math.random())
   }));
-
-  const renderOHLCBars = () => {
-    return ohlcData.map((item, index) => {
-      const isRising = item.close >= item.open;
-      const color = isRising ? "rgb(72, 187, 120)" : "rgb(245, 101, 101)";
-      const x = index * (800 / ohlcData.length);
-      const width = 8;
-      
-      return (
-        <g key={`ohlc-${index}`}>
-          {/* Wick line from high to low */}
-          <line
-            x1={x + width/2}
-            y1={item.high}
-            x2={x + width/2}
-            y2={item.low}
-            stroke={color}
-            strokeWidth={1}
-          />
-          {/* Body rectangle from open to close */}
-          <rect
-            x={x}
-            y={isRising ? item.open : item.close}
-            width={width}
-            height={Math.abs(item.close - item.open)}
-            fill={color}
-          />
-        </g>
-      );
-    });
-  };
 
   return (
     <Card className="bg-dark-card border-dark-border">
@@ -359,8 +325,6 @@ const CryptoChart = ({ data, title, isLoading = false }: CryptoChartProps) => {
                     padding={{ top: 10, bottom: 10 }}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  {/* We use the AreaChart as a container but don't render the Area */}
-                  {/* Custom OHLC visualization would be implemented here */}
                 </AreaChart>
               )}
             </ResponsiveContainer>

@@ -8,7 +8,7 @@ import {
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from "@/components/ui/dialog";
+} from "@/components/ui/dropdown-menu";
 import { GitGraph, Settings, ChartLine, LogOut } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 

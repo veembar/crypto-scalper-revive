@@ -1,4 +1,5 @@
 
+// In this file, we're only going to modify the import for strategyService
 import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
 import PriceCard from "@/components/PriceCard";
@@ -15,7 +16,7 @@ import NewsStrategy from "@/components/NewsStrategy";
 import TradingDashboard from "@/components/TradingDashboard";
 
 import { marketDataService, CryptoPrice, CryptoStats } from "@/services/marketDataService";
-import { strategyService, StrategySignal } from "@/services/strategyService";
+import { strategyServiceExtended as strategyService, StrategySignal } from "@/services/strategyService";
 import { tradingService } from "@/services/tradingService";
 import { toast } from "sonner";
 

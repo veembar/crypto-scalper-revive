@@ -1,5 +1,5 @@
 
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Wallet, TrendingUp, TrendingDown, CircleDollarSign, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,24 +10,18 @@ interface TradingDashboardProps {
 }
 
 const TradingDashboard = ({ stats }: TradingDashboardProps) => {
-  const profitColor = useMemo(() => {
-    return stats.profitToday >= 0 ? "text-green-400" : "text-red-400";
-  }, [stats.profitToday]);
+  // Moving from useMemo to regular variables to avoid React hooks issues
+  const profitColor = stats.profitToday >= 0 ? "text-green-400" : "text-red-400";
+  const profitIcon = stats.profitToday >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />;
+  const totalProfitColor = stats.totalProfit >= 0 ? "text-green-400" : "text-red-400";
   
-  const profitIcon = useMemo(() => {
-    return stats.profitToday >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />;
-  }, [stats.profitToday]);
-  
-  const totalProfitColor = useMemo(() => {
-    return stats.totalProfit >= 0 ? "text-green-400" : "text-red-400";
-  }, [stats.totalProfit]);
-  
-  const winRateColor = useMemo(() => {
-    const rate = stats.winRate * 100;
-    if (rate >= 60) return "text-green-400";
-    if (rate >= 50) return "text-yellow-400";
-    return "text-red-400";
-  }, [stats.winRate]);
+  const winRatePercentage = stats.winRate * 100;
+  let winRateColor = "text-red-400";
+  if (winRatePercentage >= 60) {
+    winRateColor = "text-green-400";
+  } else if (winRatePercentage >= 50) {
+    winRateColor = "text-yellow-400";
+  }
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -107,7 +101,7 @@ const TradingDashboard = ({ stats }: TradingDashboardProps) => {
             <div>
               <p className="text-xs text-muted-foreground">Win Rate</p>
               <h3 className={cn("text-2xl font-semibold", winRateColor)}>
-                {(stats.winRate * 100).toFixed(1)}%
+                {winRatePercentage.toFixed(1)}%
               </h3>
             </div>
           </div>
@@ -116,10 +110,10 @@ const TradingDashboard = ({ stats }: TradingDashboardProps) => {
               <div 
                 className={cn(
                   "h-full rounded-full",
-                  stats.winRate >= 0.6 ? "bg-green-400" :
-                  stats.winRate >= 0.5 ? "bg-yellow-400" : "bg-red-400"
+                  winRatePercentage >= 60 ? "bg-green-400" :
+                  winRatePercentage >= 50 ? "bg-yellow-400" : "bg-red-400"
                 )}
-                style={{ width: `${stats.winRate * 100}%` }}
+                style={{ width: `${winRatePercentage}%` }}
               />
             </div>
           </div>
